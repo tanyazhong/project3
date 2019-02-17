@@ -21,7 +21,7 @@ public:
 
 private:
 	std::list<Actor*> m_actors;
-	Penelope* m_penelope;
+	Penelope* m_pen;
 };
 
 
