@@ -6,7 +6,10 @@
 #include <list>
 #include <string>
 
+
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
+class Actor;
+class Penelope;
 
 class StudentWorld : public GameWorld
 {
@@ -17,7 +20,8 @@ public:
     virtual void cleanUp();
 
 private:
-	list<Actor*> m_actors;
+	std::list<Actor*> m_actors;
+	Penelope* m_penelope;
 };
 
 

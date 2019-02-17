@@ -9,6 +9,11 @@ Actor::Actor(int imageID, double startX, double startY, Direction dir, int depth
 	
 }
 
+StudentWorld* Actor::getWorld() const
+{
+	return m_world;
+}
+
 
 //Wall functions
 Wall::Wall(int x, int y)
@@ -30,12 +35,47 @@ void Human::getInfected()
 
 }
 
+bool Human::alive() const
+{
+	return m_alive;
+}
+
+bool Human::infected() const
+{
+	return m_infected;
+}
+
+int Human::infections() const
+{
+	return m_nInfections;
+}
+
 Penelope::Penelope(int x, int y) 
 	: Human(IID_PLAYER, x, y)
 {}
 
 void Penelope::doSomething() 
 {
-
+	int ch;
+	if (getWorld()->getKey(ch)) { // user hit a key during this tick!
+		switch (ch)
+		{ //need to check that location is not blokced!
+		case KEY_PRESS_LEFT:
+			setDirection(left);
+			moveTo(getX() - 4, getY());
+			break;
+		case KEY_PRESS_RIGHT:
+			setDirection(right);
+			moveTo(getX() + 4, getY());
+			break;
+		case KEY_PRESS_UP:
+			setDirection(up);
+			moveTo(getX(), getY() + 4);
+			break;
+		case KEY_PRESS_DOWN:
+			setDirection(down);
+			moveTo(getX(), getY() - 4);
+		}
+	}
 }
 
