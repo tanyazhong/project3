@@ -10,42 +10,48 @@ class StudentWorld;
 
 class Actor : public GraphObject{
 public: 
-	Actor(int imageID, double startX, double startY, Direction dir, int depth, double size);
+	Actor(StudentWorld* sw, int imageID, double startX, double startY, Direction dir, int depth, double size);
 	virtual void doSomething() = 0;
 	//virtual void getBurned() = 0;
 	StudentWorld* getWorld() const;
+	bool alive() const;
+	bool blocker() const;
+	bool actorCanMove(int dest_x, int dest_y) const;
 private:
 	StudentWorld* m_world;
+	bool m_alive = true;
+	bool m_blocker = true;
 };
 
 class Goodie : public Actor {        //vaccine, landmine goodie, gas can
-	bool m_alive;
+	
 };
 
 class Human : public Actor {       //penelope, citizns
 public:
-	Human(int imageID, int x, int y);
+	Human(StudentWorld* sw, int imageID, int x, int y);
 	void getInfected();
-	bool alive() const;
 	bool infected() const;
 	int infections() const;
 private:
-	bool m_alive;
-	bool m_infected;
-	int m_nInfections;
+	bool m_infected = false;
+	int m_nInfections = 0;
 };
 
 class Penelope : public Human {
 public:
-	Penelope(int x, int y);
+	Penelope(StudentWorld * sw, int x, int y);
 	virtual void doSomething();
 	
 private:
+	int m_nLandmines = 0;
+	int m_nFlamethrowers = 0;
+	int m_nVaccines = 0;
 };
 
 class Wall : public Actor {
 public:
-	Wall(int x, int y);
+	Wall(StudentWorld* sw, int x, int y);
 	virtual void doSomething();
 };
 

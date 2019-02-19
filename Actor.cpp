@@ -1,12 +1,29 @@
 #include "Actor.h"
 #include "StudentWorld.h"
 #include "Level.h"
+#include <iostream>
+using namespace std;
 
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
-Actor::Actor(int imageID, double startX, double startY, Direction dir, int depth, double size)
-	: GraphObject(imageID, startX, startY, dir, depth, size)
+Actor::Actor(StudentWorld* sw, int imageID, double startX, double startY, Direction dir, int depth, double size)
+	: GraphObject(imageID, startX, startY, dir, depth, size), m_world(sw)
+{
+}
+
+bool Actor::alive() const
+{
+	return m_alive;
+}
+
+bool Actor::blocker() const
+{
+	return m_blocker;
+}
+
+bool Actor::actorCanMove(int dest_x, int dest_y) const
 {
 	
+	return true; //getWorld()->canMove(dest_x, dest_y);
 }
 
 StudentWorld* Actor::getWorld() const
@@ -16,8 +33,8 @@ StudentWorld* Actor::getWorld() const
 
 
 //Wall functions
-Wall::Wall(int x, int y)
-	: Actor(IID_WALL, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0, 1.0)
+Wall::Wall(StudentWorld* sw, int x, int y)
+	: Actor(sw, IID_WALL, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0, 1.0)
 {}
 
 void Wall::doSomething()
@@ -25,19 +42,13 @@ void Wall::doSomething()
 	return;
 }
 
-Human::Human(int imageID, int x, int y)
-	: Actor(imageID, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0, 1.0),
-	m_alive(true), m_infected(false), m_nInfections(0)
+Human::Human(StudentWorld* sw, int imageID, int x, int y)
+	: Actor(sw, imageID, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0, 1.0)
 {}
 
 void Human::getInfected()
 {
 
-}
-
-bool Human::alive() const
-{
-	return m_alive;
 }
 
 bool Human::infected() const
@@ -50,8 +61,8 @@ int Human::infections() const
 	return m_nInfections;
 }
 
-Penelope::Penelope(int x, int y) 
-	: Human(IID_PLAYER, x, y)
+Penelope::Penelope(StudentWorld* sw, int x, int y) 
+	: Human(sw, IID_PLAYER, x, y)
 {}
 
 void Penelope::doSomething() 
@@ -77,5 +88,6 @@ void Penelope::doSomething()
 			moveTo(getX(), getY() - 4);
 		}
 	}
+	
 }
 

@@ -3,7 +3,7 @@
 
 #include "GameWorld.h"
 #include "Actor.h"
-#include <list>
+#include <vector>
 #include <string>
 
 
@@ -18,13 +18,12 @@ public:
     virtual int init();
     virtual int move();
     virtual void cleanUp();
-
+	virtual ~StudentWorld();
+	//bool canMove(int x, int y) const;
 private:
-	std::list<Actor*> m_actors;
+	std::vector<Actor*> m_actors;
 	Penelope* m_pen;
 };
-
-
 
 
 #endif // STUDENTWORLD_H_
