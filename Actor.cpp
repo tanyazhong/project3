@@ -20,10 +20,9 @@ bool Actor::blocker() const
 	return m_blocker;
 }
 
-bool Actor::actorCanMove(int dest_x, int dest_y) const
+bool Actor::actorCanMove(double dest_x, double dest_y) const
 {
-	
-	return true; //getWorld()->canMove(dest_x, dest_y);
+	return getWorld()->canMove(dest_x, dest_y);
 }
 
 StudentWorld* Actor::getWorld() const
@@ -67,27 +66,31 @@ Penelope::Penelope(StudentWorld* sw, int x, int y)
 
 void Penelope::doSomething() 
 {
-	int ch;
+	int ch, x, y;
 	if (getWorld()->getKey(ch)) { // user hit a key during this tick!
 		switch (ch)
 		{ //need to check that location is not blokced!
 		case KEY_PRESS_LEFT:
-			setDirection(left);
-			moveTo(getX() - 4, getY());
+			movePenelope(left, getX() - 4, getY());
 			break;
 		case KEY_PRESS_RIGHT:
-			setDirection(right);
-			moveTo(getX() + 4, getY());
+			movePenelope(right, getX() + 4, getY());
 			break;
 		case KEY_PRESS_UP:
-			setDirection(up);
-			moveTo(getX(), getY() + 4);
+			movePenelope(up, getX(), getY() + 4);
 			break;
 		case KEY_PRESS_DOWN:
-			setDirection(down);
-			moveTo(getX(), getY() - 4);
+			movePenelope(down, getX(), getY() - 4);
 		}
 	}
-	
 }
+
+void Penelope::movePenelope(Direction d, double x, double y)
+{
+	setDirection(d);;
+	if (actorCanMove(x, y))
+		moveTo(x, y);
+}
+
+
 

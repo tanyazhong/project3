@@ -16,11 +16,11 @@ public:
 	StudentWorld* getWorld() const;
 	bool alive() const;
 	bool blocker() const;
-	bool actorCanMove(int dest_x, int dest_y) const;
+	bool actorCanMove(double dest_x, double dest_y) const;
 private:
 	StudentWorld* m_world;
 	bool m_alive = true;
-	bool m_blocker = true;
+	bool m_blocker = true;                  //this actor can block
 };
 
 class Goodie : public Actor {        //vaccine, landmine goodie, gas can
@@ -44,6 +44,7 @@ public:
 	virtual void doSomething();
 	
 private:
+	void movePenelope(Direction d, double x, double y);
 	int m_nLandmines = 0;
 	int m_nFlamethrowers = 0;
 	int m_nVaccines = 0;

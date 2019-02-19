@@ -86,17 +86,21 @@ StudentWorld::~StudentWorld() {
 	cleanUp();
 }
 
-/*
-
-bool StudentWorld::canMove(int x, int y) const
+bool StudentWorld::canMove(double penDestX, double penDestY) const      
 {
-	vector<Actor*>::iterator it;
-	int blockerX, blockerY;
-	//for (it = m_actors.begin(); it != m_actors.end(); it++)
-	//{
-	//	if ((*it)->blocker())
-	//	{
-	//	}
-	//}
+	const int distance = 10;
+	vector<Actor*>::const_iterator it;
+	double deltaX, deltaY;
+	for ( it = m_actors.begin(); it != m_actors.end(); it++)
+	{
+		if (!(*it)->blocker())
+			continue;
+		else {
+			deltaX = penDestX - (*it)->getX();
+			deltaY = penDestY - (*it)->getY();
+			if (deltaX * deltaX + deltaY * deltaY <= distance * distance)  //yes blocks
+				return false;
+		}
+	}
+	return true;
 }
-*/

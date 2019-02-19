@@ -19,7 +19,7 @@ public:
     virtual int move();
     virtual void cleanUp();
 	virtual ~StudentWorld();
-	//bool canMove(int x, int y) const;
+	bool canMove(double x, double y) const;
 private:
 	std::vector<Actor*> m_actors;
 	Penelope* m_pen;
