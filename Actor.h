@@ -17,6 +17,7 @@ public:
 	bool alive() const;
 	bool blocker() const;
 	bool actorCanMove(double dest_x, double dest_y) const;
+	virtual ~Actor();
 private:
 	StudentWorld* m_world;
 	bool m_alive = true;

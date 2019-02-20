@@ -25,6 +25,10 @@ bool Actor::actorCanMove(double dest_x, double dest_y) const
 	return getWorld()->canMove(dest_x, dest_y);
 }
 
+Actor::~Actor()
+{
+}
+
 StudentWorld* Actor::getWorld() const
 {
 	return m_world;
@@ -47,7 +51,7 @@ Human::Human(StudentWorld* sw, int imageID, int x, int y)
 
 void Human::getInfected()
 {
-
+	return;
 }
 
 bool Human::infected() const
@@ -66,10 +70,10 @@ Penelope::Penelope(StudentWorld* sw, int x, int y)
 
 void Penelope::doSomething() 
 {
-	int ch, x, y;
+	int ch;
 	if (getWorld()->getKey(ch)) { // user hit a key during this tick!
 		switch (ch)
-		{ //need to check that location is not blokced!
+		{ 
 		case KEY_PRESS_LEFT:
 			movePenelope(left, getX() - 4, getY());
 			break;
@@ -87,8 +91,8 @@ void Penelope::doSomething()
 
 void Penelope::movePenelope(Direction d, double x, double y)
 {
-	setDirection(d);;
-	if (actorCanMove(x, y))
+	setDirection(d);
+	if (actorCanMove(x, y)) 
 		moveTo(x, y);
 }
 

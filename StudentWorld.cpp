@@ -88,17 +88,31 @@ StudentWorld::~StudentWorld() {
 
 bool StudentWorld::canMove(double penDestX, double penDestY) const      
 {
-	const int distance = 10;
+	//if the destination is inside a blocker's bounding box retrun false.
+	//penelope's bounding box cannot intersect at all with Q's boudning box
+	//then pen's bounding box is from (penDestX, penDestY) to (penDestX + spritewidth - 1, penDestY + spritewidth - 1)
+	double b_upperX, b_lowerX, b_upperY, b_lowerY;
+
+	double p_lowerX = penDestX;
+	double p_upperX = p_lowerX + SPRITE_WIDTH - 1;
+	double p_lowerY = penDestY;
+	double p_upperY = p_lowerY + SPRITE_HEIGHT - 1;
+
 	vector<Actor*>::const_iterator it;
-	double deltaX, deltaY;
-	for ( it = m_actors.begin(); it != m_actors.end(); it++)
+	for (it = m_actors.begin(); it != m_actors.end(); it++)
 	{
-		if (!(*it)->blocker())
-			continue;
-		else {
-			deltaX = penDestX - (*it)->getX();
-			deltaY = penDestY - (*it)->getY();
-			if (deltaX * deltaX + deltaY * deltaY <= distance * distance)  //yes blocks
+		if ((*it)->blocker())
+		{
+			b_lowerX = (*it)->getX();
+			b_lowerY = (*it)->getY();
+			b_upperX = b_lowerX + SPRITE_WIDTH - 1;
+			b_upperY = b_lowerY + SPRITE_HEIGHT - 1;
+
+			if (p_lowerX >= b_lowerX && p_lowerX <= b_upperX && 
+				p_lowerY >= b_lowerY && p_lowerY <= b_upperY)
+				return false;
+			if (p_upperX >= b_lowerX && p_upperX <= b_upperX &&
+				p_upperY >= b_lowerY && p_upperY <= b_upperY)
 				return false;
 		}
 	}
