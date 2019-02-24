@@ -39,27 +39,35 @@ int StudentWorld::init()
 		for (int j = 0; j < LEVEL_HEIGHT; j++) 
 		{
 			curSpot = curLev.getContentsOf(i, j);
+			Actor* a;
 			switch (curSpot)
 			{
 				case Level::player:
 					m_pen = new Penelope(this, i, j);
 					break;
-				case Level::wall:
-					Actor* w = new Wall(this, i, j);
-					m_actors.push_back(w);
+				case Level::wall: 
+					a = new Wall(this, i, j);
+					m_actors.push_back(a);
+					break; 
+				case Level::exit:
+					a = new Exit(this, i, j);
+					m_actors.push_back(a);
+					break;
+				case Level::pit:
+					a = new Pit(this, i, j);
+					m_actors.push_back(a);
 					break;
 			}
 		}
 	}
 	
-	//m_pen = new Penelope(100, 200);
 	return GWSTATUS_CONTINUE_GAME;
 }
 
 int StudentWorld::move()
 {
 // Give each actor a chance to do something, including Penelope
-	if (m_pen->alive()) {
+	if (m_pen->isAlive()) {
 		m_pen->doSomething();
 	}
 	
@@ -67,7 +75,6 @@ int StudentWorld::move()
 	for(it = m_actors.begin(); it != m_actors.end(); it++)
 	{
 		(*it)->doSomething();
-		
 	}
 	
 	decLives();
@@ -86,11 +93,30 @@ StudentWorld::~StudentWorld() {
 	cleanUp();
 }
 
+void StudentWorld::activateOnAppropriateActors(Actor* a)
+{
+	const int distance = 10;
+	vector<Actor*>::const_iterator it;
+	double actX = a->getX();
+	double actY = a->getY();
+	double deltaX, deltaY;
+	for (it = m_actors.begin(); it != m_actors.end(); it++)
+	{
+		deltaX = actX - (*it)->getX();
+		deltaY = actY - (*it)->getY();
+		if (deltaX * deltaX + deltaY * deltaY <= distance * distance)  //actor overlaps
+			a->activateIfAppropriate(*it);
+	}
+
+	deltaX = actX - m_pen->getX();
+	deltaY = actY - m_pen->getY();
+	if (deltaX * deltaX + deltaY * deltaY <= distance * distance)   //pen overlaps
+		a->activateIfAppropriate(m_pen);
+}
+
+
 bool StudentWorld::canMove(double penDestX, double penDestY) const      
 {
-	//if the destination is inside a blocker's bounding box retrun false.
-	//penelope's bounding box cannot intersect at all with Q's boudning box
-	//then pen's bounding box is from (penDestX, penDestY) to (penDestX + spritewidth - 1, penDestY + spritewidth - 1)
 	double b_upperX, b_lowerX, b_upperY, b_lowerY;
 
 	double p_lowerX = penDestX;
@@ -101,7 +127,7 @@ bool StudentWorld::canMove(double penDestX, double penDestY) const
 	vector<Actor*>::const_iterator it;
 	for (it = m_actors.begin(); it != m_actors.end(); it++)
 	{
-		if ((*it)->blocker())
+		if ((*it)->blocksMovement())
 		{
 			b_lowerX = (*it)->getX();
 			b_lowerY = (*it)->getY();
@@ -113,8 +139,15 @@ bool StudentWorld::canMove(double penDestX, double penDestY) const
 				return false;
 			if (p_upperX >= b_lowerX && p_upperX <= b_upperX &&
 				p_upperY >= b_lowerY && p_upperY <= b_upperY)
+				return false; 
+			if (p_lowerX >= b_lowerX && p_lowerX <= b_upperX &&
+				p_upperY >= b_lowerY && p_upperY <= b_upperY)
+				return false;
+			if (p_upperX >= b_lowerX && p_upperX <= b_upperX &&
+				p_lowerY >= b_lowerY && p_lowerY <= b_upperY)
 				return false;
 		}
 	}
 	return true;
 }
+

@@ -18,8 +18,10 @@ public:
     virtual int init();
     virtual int move();
     virtual void cleanUp();
-	virtual ~StudentWorld();
+	void activateOnAppropriateActors(Actor* a);
 	bool canMove(double x, double y) const;
+	virtual ~StudentWorld();
+	
 private:
 	std::vector<Actor*> m_actors;
 	Penelope* m_pen;
