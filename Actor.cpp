@@ -36,6 +36,14 @@ void Actor::activateIfAppropriate(Actor * a)
 void Actor::useExitIfAppropriate()
 {}
 
+void Actor::dieByFallOrBurnIfAppropriate()
+{}
+
+void Actor::beVomitedOnIfAppropriate()
+{}
+
+void Actor::pickUpGoodieIfAppropriate(Goodie * g)
+{}
 
 bool Actor::actorCanMove(double dest_x, double dest_y) const
 {
@@ -89,7 +97,7 @@ bool Exit::blocksFlame() const{
 }
 
 Pit::Pit(StudentWorld * sw, double x, double y)
-	: ActivatingObject(sw, IID_PIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0)
+	: ActivatingObject(sw, IID_PIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, 0, right)
 {}
 
 void Pit::doSomething()
@@ -98,14 +106,124 @@ void Pit::doSomething()
 }
 
 void Pit::activateIfAppropriate(Actor * a)
+{
+	a->dieByFallOrBurnIfAppropriate();
+}
+
+Flame::Flame(StudentWorld * sw, double x, double y, int dir)
+	:ActivatingObject(sw, IID_FLAME, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, 0, dir)
+{
+}
+
+void Flame::doSomething()
+{
+}
+
+void Flame::activateIfAppropriate(Actor * a)
+{
+}
+
+
+Vomit::Vomit(StudentWorld * sw, double x, double y)
+	:ActivatingObject(sw, IID_VOMIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, 1, right)
+{
+}
+
+void Vomit::doSomething()
+{
+}
+
+void Vomit::activateIfAppropriate(Actor * a)
+{
+}
+
+Landmine::Landmine(StudentWorld * sw, double x, double y)
+	:ActivatingObject(sw, IID_LANDMINE, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, 1, right)
+{
+}
+
+void Landmine::doSomething()
+{
+}
+
+void Landmine::activateIfAppropriate(Actor * a)
+{
+}
+
+void Landmine::dieByFallOrBurnIfAppropriate()
+{
+}
+
+
+Goodie::Goodie(StudentWorld * sw, int imageID, double x, double y)
+	:ActivatingObject(sw, imageID, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, 1, right)
+{
+}
+
+void Goodie::activateIfAppropriate(Actor * a)
+{
+}
+
+void Goodie::dieByFallOrBurnIfAppropriate()
+{
+}
+
+VaccineGoodie::VaccineGoodie(StudentWorld * sw, double x, double y)
+	:Goodie(sw, IID_VACCINE_GOODIE, SPRITE_WIDTH * x, SPRITE_WIDTH * y)
+{
+}
+
+void VaccineGoodie::doSomething()
+{
+}
+
+void VaccineGoodie::pickUp(Penelope * p)
 {}
 
+GasCanGoodie::GasCanGoodie(StudentWorld * sw, double x, double y)
+	:Goodie(sw, IID_GAS_CAN_GOODIE, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+{
+}
+
+void GasCanGoodie::doSomething()
+{
+}
+
+void GasCanGoodie::pickUp(Penelope * p) 
+{}
+
+LandmineGoodie::LandmineGoodie(StudentWorld * sw, double x, double y)
+	:Goodie(sw, IID_LANDMINE_GOODIE, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+{
+}
+
+void LandmineGoodie::doSomething()
+{
+}
+
+void LandmineGoodie::pickUp(Penelope * p)
+{}
+
+
+Agent::Agent(StudentWorld* sw, int imageID, double x, double y, int dir) 
+	:Actor(sw, imageID, x, y, 0, dir)
+{}
+
+bool Agent::blocksMovement() const
+{
+	return true;
+}
+
+bool Agent::triggersOnlyActiveLandmines() const
+{
+	return false;
+}
 
 Human::Human(StudentWorld* sw, int imageID, double x, double y)
-	: Actor(sw, imageID, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0)
+	: Agent(sw, imageID,  x, y, right)
 {}
 
-void Human::getInfected(){
+void Human::getVomitedOn(){
 	return;
 }
 
@@ -122,7 +240,7 @@ int Human::infections() const{
 }
 
 Penelope::Penelope(StudentWorld* sw, double x, double y) 
-	: Human(sw, IID_PLAYER, x, y)
+	: Human(sw, IID_PLAYER, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
 {}
 
 void Penelope::doSomething() 
@@ -151,9 +269,63 @@ void Penelope::useExitIfAppropriate()
 	cout << "exited" << endl;
 }
 
+void Penelope::dieByFallOrBurnIfAppropriate()
+{
+	cout << "penelope died" << endl;
+}
+
+void Penelope::pickUpGoodieIfAppropriate(Goodie * g)
+{
+}
+
 void Penelope::movePenelope(Direction d, double x, double y)
 {
 	setDirection(d);
 	if (actorCanMove(x, y)) 
 		moveTo(x, y);
+}
+
+Citizen::Citizen(StudentWorld * sw, double x, double y)
+	:Human(sw,IID_CITIZEN, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+{}
+
+void Citizen::doSomething()
+{
+}
+
+void Citizen::useExitIfAppropriate()
+{
+}
+
+void Citizen::dieByFallOrBurnIfAppropriate()
+{
+}
+
+Zombie::Zombie(StudentWorld * sw, double x, double y)
+	:Agent(sw, IID_ZOMBIE, x, y, right)
+{
+}
+
+DumbZombie::DumbZombie(StudentWorld * sw, double x, double y)
+	:Zombie(sw, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+{}
+
+void DumbZombie::doSomething()
+{
+}
+
+void DumbZombie::dieByFallOrBurnIfAppropriate()
+{
+}
+
+SmartZombie::SmartZombie(StudentWorld * sw, double x, double y)
+	: Zombie(sw, SPRITE_WIDTH*x, SPRITE_HEIGHT* y)
+{}
+
+void SmartZombie::doSomething()
+{
+}
+
+void SmartZombie::dieByFallOrBurnIfAppropriate()
+{
 }

@@ -21,13 +21,12 @@ StudentWorld::StudentWorld(string assetPath)       //constructor
 }
 
 int StudentWorld::init()
-{
-	
+{	
 	Level curLev(assetPath());
 	
-	Level::LoadResult result = curLev.loadLevel("level01.txt");
+	Level::LoadResult result = curLev.loadLevel("level02.txt");
 	if (result == Level::load_fail_file_not_found)
-		cerr << "Cannot find level01.txt data file" << endl;
+		cerr << "Cannot find data file" << endl;
 	else if (result == Level::load_fail_bad_format)
 		cerr << "Your level was improperly formatted" << endl;
 	else if (result == Level::load_success)
@@ -57,6 +56,19 @@ int StudentWorld::init()
 					a = new Pit(this, i, j);
 					m_actors.push_back(a);
 					break;
+				case Level::citizen:
+					a = new Citizen(this, i, j);
+					m_actors.push_back(a);
+					break;
+				case Level::dumb_zombie:
+					a = new DumbZombie(this, i, j);
+					m_actors.push_back(a);
+					break;
+				case Level::smart_zombie:
+					a = new SmartZombie(this, i, j);
+					m_actors.push_back(a);
+					break;
+
 			}
 		}
 	}
