@@ -24,7 +24,7 @@ int StudentWorld::init()
 {	
 	Level curLev(assetPath());
 	
-	Level::LoadResult result = curLev.loadLevel("level02.txt");
+	Level::LoadResult result = curLev.loadLevel("level03.txt");
 	if (result == Level::load_fail_file_not_found)
 		cerr << "Cannot find data file" << endl;
 	else if (result == Level::load_fail_bad_format)
@@ -68,13 +68,25 @@ int StudentWorld::init()
 					a = new SmartZombie(this, i, j);
 					m_actors.push_back(a);
 					break;
-
+				case Level::gas_can_goodie:
+					a = new GasCanGoodie(this, i, j);
+					m_actors.push_back(a);
+					break;
+				case Level::landmine_goodie:
+					a = new LandmineGoodie(this, i, j);
+					m_actors.push_back(a);
+					break;
+				case Level::vaccine_goodie:
+					a = new VaccineGoodie(this, i, j);
+					m_actors.push_back(a);
+					break;
 			}
 		}
 	}
 	
 	return GWSTATUS_CONTINUE_GAME;
 }
+
 
 int StudentWorld::move()
 {
@@ -88,8 +100,19 @@ int StudentWorld::move()
 	{
 		(*it)->doSomething();
 	}
-	
-	decLives();
+
+	it = m_actors.begin();
+	Actor* temp;
+	while (it != m_actors.end()) {
+		if (!(*it)->isAlive()){
+			temp = *it;
+			delete temp;
+			it = m_actors.erase(it); //returns an iterator to the next element
+		}
+		else
+			it++;
+	}
+
 	return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -100,6 +123,8 @@ void StudentWorld::cleanUp()
 	for (it = m_actors.begin(); it != m_actors.end(); it++)
 		m_actors.erase(it);
 }
+
+
 
 StudentWorld::~StudentWorld() {
 	cleanUp();

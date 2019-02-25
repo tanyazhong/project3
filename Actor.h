@@ -37,12 +37,7 @@ public:
 	virtual bool blocksFlame() const;
 };
 
-class ActivatingObject : public Actor{
-public:
-	ActivatingObject(StudentWorld* sw, int imageID, double x, double y, int depth, int dir);
-};
-
-class Exit : public ActivatingObject{
+class Exit : public Actor{
 public:
 	Exit(StudentWorld* sw, double x, double y);
 	virtual void doSomething();
@@ -50,28 +45,28 @@ public:
 	virtual bool blocksFlame() const;
 };
 
-class Pit : public ActivatingObject{
+class Pit : public Actor{
 public:
 	Pit(StudentWorld* sw, double x, double y);
 	virtual void doSomething();
 	virtual void activateIfAppropriate(Actor* a);
 };
 
-class Flame : public ActivatingObject{
+class Flame : public Actor{
 public:
 	Flame(StudentWorld* sw, double x, double y, int dir);
 	virtual void doSomething();
 	virtual void activateIfAppropriate(Actor* a);
 };
 
-class Vomit : public ActivatingObject{
+class Vomit : public Actor{
 public:
-	Vomit(StudentWorld* sw, double x, double y);
+	Vomit(StudentWorld* sw, double x, double y, int dir);
 	virtual void doSomething();
 	virtual void activateIfAppropriate(Actor* a);
 };
 
-class Landmine : public ActivatingObject{
+class Landmine : public Actor{
 public:
 	Landmine(StudentWorld* sw, double x, double y);
 	virtual void doSomething();
@@ -79,7 +74,7 @@ public:
 	virtual void dieByFallOrBurnIfAppropriate();
 };
 
-class Goodie : public ActivatingObject{
+class Goodie : public Actor{
 public:
 	Goodie(StudentWorld* sw, int imageID, double x, double y);
 	virtual void activateIfAppropriate(Actor* a);
@@ -156,6 +151,12 @@ public:
 	virtual void useExitIfAppropriate();
 	virtual void dieByFallOrBurnIfAppropriate();
 	virtual void pickUpGoodieIfAppropriate(Goodie* g);
+	void increaseVaccines();
+	void increaseFlameCharges();
+	void increaseLandmines();
+	int getNumVaccines() const;
+	int getNumFlameCharges() const;
+	int getNumLandmines() const;
 	
 private:
 	void movePenelope(Direction d, double x, double y);
