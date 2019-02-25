@@ -32,10 +32,6 @@ void Actor::dieByFallOrBurnIfAppropriate(){}
 void Actor::beVomitedOnIfAppropriate(){}
 void Actor::pickUpGoodieIfAppropriate(Goodie * g){}
 
-bool Actor::actorCanMove(double dest_x, double dest_y) const{
-	return getWorld()->canMove(dest_x, dest_y);
-}
-
 Actor::~Actor(){}
 
 StudentWorld* Actor::getWorld() const{
@@ -151,20 +147,34 @@ GasCanGoodie::GasCanGoodie(StudentWorld * sw, double x, double y)
 {}
 
 void GasCanGoodie::doSomething()
-{}
+{
+	if (!isAlive())
+		return;
+	getWorld()->activateOnAppropriateActors(this);
+}
 
 void GasCanGoodie::pickUp(Penelope * p) 
-{}
+{
+	p->increaseFlameCharges();
+	this->setDead();
+}
 
 LandmineGoodie::LandmineGoodie(StudentWorld * sw, double x, double y)
 	:Goodie(sw, IID_LANDMINE_GOODIE, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
 {}
 
 void LandmineGoodie::doSomething()
-{}
+{
+	if (!isAlive())
+		return;
+	getWorld()->activateOnAppropriateActors(this);
+}
 
 void LandmineGoodie::pickUp(Penelope * p)
-{}
+{
+	p->increaseLandmines();
+	this->setDead();
+}
 
 
 Agent::Agent(StudentWorld* sw, int imageID, double x, double y, int dir) 
@@ -192,11 +202,15 @@ bool Human::blocksMovement() const{
 }
 
 bool Human::isInfected() const{
-	return m_infected;
+	return m_nInfections > 0;
 }
 
 int Human::infections() const{
 	return m_nInfections;
+}
+
+void Human::increaseInfections(){
+	m_nInfections++;
 }
 
 Penelope::Penelope(StudentWorld* sw, double x, double y) 
@@ -205,10 +219,25 @@ Penelope::Penelope(StudentWorld* sw, double x, double y)
 
 void Penelope::doSomething() 
 {
+	if (!isAlive())
+		return;
+
+	if (isInfected()){
+		increaseInfections();
+		if (infections() == 500) {
+			setDead();
+			getWorld()->playSound(SOUND_PLAYER_DIE);
+			return;
+		}
+	}
+
 	int ch;
 	if (getWorld()->getKey(ch)) { // user hit a key during this tick!
 		switch (ch)
 		{ 
+		case KEY_PRESS_SPACE:
+			deployFlames(getDirection(), getX(), getY());
+			break;
 		case KEY_PRESS_LEFT:
 			movePenelope(left, getX() - 4, getY());
 			break;
@@ -220,6 +249,25 @@ void Penelope::doSomething()
 			break;
 		case KEY_PRESS_DOWN:
 			movePenelope(down, getX(), getY() - 4);
+		}
+	}
+}
+
+void Penelope::deployFlames(Direction d, double x, double y) {
+	m_nFlamethrowers--;
+	getWorld()->playSound(SOUND_PLAYER_FIRE);
+	double fx, fy;
+	switch (d)
+	{
+	case up:
+		for (int i = 0; i != 3; i++) {
+			fx = x;
+			fy = y + i * SPRITE_HEIGHT;
+
+			if (getWorld()->isFlameBlockedAt(fx,fy))
+				break;
+
+			//new Flame(getWorld(), fx, fy, up); TRY USING STUDENT WORLD ADD ACTOR?
 		}
 	}
 }
@@ -239,39 +287,33 @@ void Penelope::pickUpGoodieIfAppropriate(Goodie * g)
 	g->pickUp(this);
 }
 
-void Penelope::increaseVaccines()
-{
+void Penelope::increaseVaccines(){
 	m_nVaccines++;
 }
 
-void Penelope::increaseFlameCharges()
-{
-	m_nFlamethrowers++;
+void Penelope::increaseFlameCharges(){
+	m_nFlamethrowers += 5;
 }
 
-void Penelope::increaseLandmines()
-{
-	m_nLandmines++;
+void Penelope::increaseLandmines(){
+	m_nLandmines += 2;
 }
 
-int Penelope::getNumVaccines() const
-{
+int Penelope::getNumVaccines() const{
 	return m_nVaccines;
 }
 
-int Penelope::getNumFlameCharges() const
-{
+int Penelope::getNumFlameCharges() const{
 	return m_nFlamethrowers;
 }
 
-int Penelope::getNumLandmines() const
-{
+int Penelope::getNumLandmines() const{
 	return m_nLandmines;
 }
 
 void Penelope::movePenelope(Direction d, double x, double y){
 	setDirection(d);
-	if (actorCanMove(x, y)) 
+	if (getWorld()->canMove(x, y)) 
 		moveTo(x, y);
 }
 

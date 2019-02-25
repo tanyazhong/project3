@@ -119,9 +119,13 @@ int StudentWorld::move()
 void StudentWorld::cleanUp()
 {
 	delete m_pen;
-	vector<Actor*>::iterator it;
-	for (it = m_actors.begin(); it != m_actors.end(); it++)
-		m_actors.erase(it);
+	Actor* temp;
+	vector<Actor*>::iterator it = m_actors.begin(); 
+	while (it != m_actors.end()) {
+		temp = *it;
+		delete temp;
+		it = m_actors.erase(it);
+	}
 }
 
 
@@ -186,5 +190,22 @@ bool StudentWorld::canMove(double penDestX, double penDestY) const
 		}
 	}
 	return true;
+}
+
+bool StudentWorld::isFlameBlockedAt(double x, double y) const
+{
+	const int distance = 10;
+	vector<Actor*>::const_iterator it;
+	double deltaX, deltaY;
+	for (it = m_actors.begin(); it != m_actors.end(); it++)
+	{
+		if ((*it)->blocksFlame()) {
+			deltaX = x - (*it)->getX();
+			deltaY = y - (*it)->getY();
+			if (deltaX * deltaX + deltaY * deltaY <= distance * distance)  // overlaps
+				return true;
+		}
+	}
+	return false;
 }
 

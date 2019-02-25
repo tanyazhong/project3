@@ -20,6 +20,7 @@ public:
     virtual void cleanUp();
 	void activateOnAppropriateActors(Actor* a);
 	bool canMove(double x, double y) const;
+	bool isFlameBlockedAt(double x, double y) const;
 	virtual ~StudentWorld();
 	
 private:

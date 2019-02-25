@@ -22,7 +22,6 @@ public:
 	virtual void dieByFallOrBurnIfAppropriate();
 	virtual void beVomitedOnIfAppropriate();
 	virtual void pickUpGoodieIfAppropriate(Goodie * g);
-	bool actorCanMove(double dest_x, double dest_y) const;
 	virtual ~Actor();
 private:
 	StudentWorld* m_world;
@@ -139,8 +138,8 @@ public:
 	virtual bool blocksMovement() const;
 	bool isInfected() const;
 	int infections() const;
+	void increaseInfections();
 private:
-	bool m_infected = false;
 	int m_nInfections = 0;
 };
 
@@ -160,6 +159,7 @@ public:
 	
 private:
 	void movePenelope(Direction d, double x, double y);
+	void deployFlames(Direction d, double x, double y);
 	int m_nLandmines = 0;
 	int m_nFlamethrowers = 0;
 	int m_nVaccines = 0;
