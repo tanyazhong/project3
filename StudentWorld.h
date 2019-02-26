@@ -22,6 +22,7 @@ public:
 	void activateOnAppropriateActors(Actor* a);
 	bool canMove(double x, double y) const;
 	bool isFlameBlockedAt(double x, double y) const;
+	bool locateNearestCitizenTrigger(double x, double y, double& otherX, double& otherY, double& distance, bool& isThreat) const;
 	virtual ~StudentWorld();
 	
 private:

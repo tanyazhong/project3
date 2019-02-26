@@ -15,13 +15,17 @@ public:
 	StudentWorld* getWorld() const;
 	bool isAlive() const;
 	void setDead();
-	virtual bool blocksMovement() const;       //automatically false
-	virtual bool blocksFlame() const;          //auto false
 	virtual void activateIfAppropriate(Actor* a);
 	virtual void useExitIfAppropriate();
 	virtual void dieByFallOrBurnIfAppropriate();
 	virtual void beVomitedOnIfAppropriate();
 	virtual void pickUpGoodieIfAppropriate(Goodie * g);
+	virtual bool blocksMovement() const;       //automatically false
+	virtual bool blocksFlame() const;          //auto false
+	virtual bool triggersOnlyActiveLandmines() const;
+	virtual bool triggersZombieVomit() const;
+	virtual bool threatensCitizens() const;
+	virtual bool triggersCitizens() const;
 private:
 	StudentWorld* m_world;
 	bool m_alive = true;
@@ -108,6 +112,7 @@ public:
 class Agent : public Actor{
 public:
 	Agent(StudentWorld* w, int imageID, double x, double y, int dir);
+	virtual void moveAgent(Direction d, double x, double y) = 0;
 	virtual bool blocksMovement() const;
 	virtual bool triggersOnlyActiveLandmines() const;
 };
@@ -116,6 +121,8 @@ public:
 class Zombie : public Agent{
 public:
 	Zombie(StudentWorld* sw, double x, double y);
+	virtual void moveAgent(Direction d, double x, double y);
+	virtual bool triggersCitizens() const;
 };
 
 class DumbZombie : public Zombie{
@@ -137,11 +144,10 @@ class Human : public Agent {       //penelope, citizns
 public:
 	Human(StudentWorld* sw, int imageID, double x, double y);
 	void beVomitedOnIfAppropriate();
-	virtual bool blocksMovement() const;
-	bool isInfected() const;
-	int infectionDuration() const;
-	void clearInfection();
-	void increaseInfections();
+	bool isInfected() const;          //returns m_ninfections > 0
+	int infectionDuration() const;    //returns m_ninfections
+	void clearInfection();            //sets to zero
+	void increaseInfections();       //increases by 1
 private:
 	int m_nInfections = 0;
 };
@@ -153,6 +159,8 @@ public:
 	virtual void useExitIfAppropriate();
 	virtual void dieByFallOrBurnIfAppropriate();
 	virtual void pickUpGoodieIfAppropriate(Goodie* g);
+	virtual bool triggersCitizens() const;
+	virtual void moveAgent(Direction d, double x, double y);
 	void increaseVaccines();
 	void increaseFlameCharges();
 	void increaseLandmines();
@@ -161,7 +169,6 @@ public:
 	int getNumLandmines() const;
 	
 private:
-	void movePenelope(Direction d, double x, double y);
 	void deployFlames(Direction d, double x, double y);
 	void deployLandmine(Direction d, double x, double y);
 	void vaccinate();
@@ -177,6 +184,9 @@ public:
 	virtual void doSomething();
 	virtual void useExitIfAppropriate();
 	virtual void dieByFallOrBurnIfAppropriate();
+	virtual void moveAgent(Direction d, double x, double y);
+private:
+	bool m_paralyzed = false;
 };
 
 

@@ -26,6 +26,25 @@ bool Actor::blocksFlame() const{
 	return false;
 }
 
+bool Actor::triggersOnlyActiveLandmines() const
+{
+	return false;
+}
+
+bool Actor::triggersZombieVomit() const
+{
+	return false;
+}
+
+bool Actor::threatensCitizens() const
+{
+	return false;
+}
+
+bool Actor::triggersCitizens() const {
+	return false;
+}
+
 void Actor::activateIfAppropriate(Actor * a){}
 void Actor::useExitIfAppropriate(){}
 void Actor::dieByFallOrBurnIfAppropriate(){}
@@ -223,10 +242,6 @@ void Human::beVomitedOnIfAppropriate(){
 	m_nInfections++;
 }
 
-bool Human::blocksMovement() const{
-	return true;
-}
-
 bool Human::isInfected() const{
 	return m_nInfections > 0;
 }
@@ -235,8 +250,7 @@ int Human::infectionDuration() const{
 	return m_nInfections;
 }
 
-void Human::clearInfection()
-{
+void Human::clearInfection(){
 	m_nInfections = 0;
 }
 
@@ -275,18 +289,24 @@ void Penelope::doSomething()
 		case KEY_PRESS_ENTER:
 			break;
 		case KEY_PRESS_LEFT:
-			movePenelope(left, getX() - 4, getY());
+			moveAgent(left, getX() - 4, getY());
 			break;
 		case KEY_PRESS_RIGHT:
-			movePenelope(right, getX() + 4, getY());
+			moveAgent(right, getX() + 4, getY());
 			break;
 		case KEY_PRESS_UP:
-			movePenelope(up, getX(), getY() + 4);
+			moveAgent(up, getX(), getY() + 4);
 			break;
 		case KEY_PRESS_DOWN:
-			movePenelope(down, getX(), getY() - 4);
+			moveAgent(down, getX(), getY() - 4);
 		}
 	}
+}
+
+void Penelope::moveAgent(Direction d, double x, double y) {
+	setDirection(d);
+	if (getWorld()->canMove(x, y))
+		moveTo(x, y);
 }
 
 void Penelope::deployFlames(Direction d, double x, double y) {
@@ -354,6 +374,10 @@ void Penelope::pickUpGoodieIfAppropriate(Goodie * g)
 	g->pickUp(this);
 }
 
+bool Penelope::triggersCitizens() const {
+	return true;
+}
+
 void Penelope::increaseVaccines(){
 	m_nVaccines++;
 }
@@ -378,17 +402,83 @@ int Penelope::getNumLandmines() const{
 	return m_nLandmines;
 }
 
-void Penelope::movePenelope(Direction d, double x, double y){
-	setDirection(d);
-	if (getWorld()->canMove(x, y)) 
-		moveTo(x, y);
-}
+
 
 Citizen::Citizen(StudentWorld * sw, double x, double y)
 	:Human(sw,IID_CITIZEN, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
 {}
 
-void Citizen::doSomething(){}
+void Citizen::doSomething(){
+	if (!isAlive())
+		return;
+	if (isInfected())
+		increaseInfections();
+	if (infectionDuration() == 500) {
+		setDead();
+		getWorld()->playSound(SOUND_ZOMBIE_BORN);
+		getWorld()->increaseScore(-1000);
+		int n = randInt(0, 9);
+		Actor* z;
+		if (n < 3)     //0 1 or 2
+			z = new SmartZombie(getWorld(), getX(), getY());
+		else
+			z = new DumbZombie(getWorld(), getX(), getY());
+		getWorld()->addActor(z);
+		return;
+	}
+	if (m_paralyzed) {
+		m_paralyzed = false;
+		return;
+	}
+	
+	bool isThreat;
+	double ox, oy, d, dx, dy;
+	if (!getWorld()->locateNearestCitizenTrigger(getX(), getY(), ox, oy, d, isThreat)) {
+		m_paralyzed = true;
+		return;
+	}
+	dx = getX() - ox;
+	dy = getY() - oy;
+	Direction xdir, ydir;
+	if (dx <= 0)
+		ydir = up;
+	else
+		ydir = down;
+
+	if (dy <= 0)
+		xdir = right;
+	else
+		xdir = left;
+
+	if (!isThreat && dx * dx + dy * dy <= 80 * 80) {               //penelope is near
+		if (getX() == ox) {     //same column
+			if (ydir == up)        //pen is above
+				moveAgent(up, getX(), getY() + 2);
+			else 
+				moveAgent(down, getX(), getY() - 2);
+			return;
+		}
+		else if (getY() == oy){
+			if (xdir == right)        //pen is right
+				moveAgent(right, getX() + 2, getY());
+			else 
+				moveAgent(left, getX() - 2, getY());
+			return;
+		}
+		else {
+			int n = randInt(0, 1);
+		
+
+		}
+	}
+}
+
+void Citizen::moveAgent(Direction d, double x, double y) {
+	if (getWorld()->canMove(x, y)) {
+		setDirection(d);
+		moveTo(x, y);
+	}
+}
 
 void Citizen::useExitIfAppropriate(){}
 
@@ -400,6 +490,15 @@ void Citizen::dieByFallOrBurnIfAppropriate(){
 Zombie::Zombie(StudentWorld * sw, double x, double y)
 	:Agent(sw, IID_ZOMBIE, x, y, right)
 {}
+
+void Zombie::moveAgent(Direction d, double x, double y)
+{
+}
+
+bool Zombie::triggersCitizens() const {
+	return true;
+}
+
 
 DumbZombie::DumbZombie(StudentWorld * sw, double x, double y)
 	:Zombie(sw, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)

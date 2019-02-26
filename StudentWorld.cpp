@@ -133,7 +133,6 @@ void StudentWorld::addActor(Actor * a)
 }
 
 
-
 StudentWorld::~StudentWorld() {
 	cleanUp();
 }
@@ -213,3 +212,54 @@ bool StudentWorld::isFlameBlockedAt(double x, double y) const
 	return false;
 }
 
+
+bool StudentWorld::locateNearestCitizenTrigger(double x, double y, double & otherX, double & otherY, double & distance, bool & isThreat) const
+{
+	// Return true if there is a living zombie or Penelope, otherwise false.
+// If true, otherX, otherY, and distance will be set to the location and
+// distance of the one nearest to (x,y), and isThreat will be set to true
+// if it's a zombie, false if a Penelope.
+	double px, py = 0;
+	if (!m_pen->isAlive())
+		return false;
+	else {
+		px = m_pen->getX();
+		py = m_pen->getY();
+	}
+
+	vector<Actor*>::const_iterator it;
+	double dx = 0;
+	double dy = 0;     //distances
+	double curdX, curdY;
+	bool noZomb = true;
+	for (it = m_actors.begin(); it != m_actors.end(); it++)
+	{
+		if ((*it)->triggersCitizens()) {
+			noZomb = false;
+			curdX = x - (*it)->getX();
+			curdY = y - (*it)->getY();
+			if (curdX * curdX + curdY * curdY <= dx * dx + dy * dy) {     //this is the currecnt closest zomb
+				dx = curdX;
+				dy = curdY;
+				otherX = (*it)->getX();
+				otherY = (*it)->getY();
+			}
+		}
+	}
+
+	if (noZomb || px * px + py * py < dx*dx + dy * dy) {   //pen is closer than zomb
+		distance = px * px + py * py;
+		otherX = px;
+		otherY = py;
+		isThreat = false;
+		return true;
+	}
+	else{
+		distance = dx * dx + dy * dy;
+		otherX = dx;
+		otherY = dy;
+		isThreat = true;
+		return true;
+	}
+	return false;
+}
