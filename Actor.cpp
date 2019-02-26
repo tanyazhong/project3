@@ -95,8 +95,7 @@ void Flame::doSomething(){
 	m_lifeSpan++;
 }
 
-void Flame::activateIfAppropriate(Actor * a)
-{
+void Flame::activateIfAppropriate(Actor * a){
 	a->dieByFallOrBurnIfAppropriate();
 }
 
@@ -105,10 +104,20 @@ Vomit::Vomit(StudentWorld * sw, double x, double y, int dir)
 {}
 
 void Vomit::doSomething()
-{}
+{
+	if (!isAlive())
+		return;
+	if (m_lifeSpan == 2){
+		setDead();
+		return;
+	}
+	getWorld()->activateOnAppropriateActors(this);
+}
 
 void Vomit::activateIfAppropriate(Actor * a)
-{}
+{
+	a->beVomitedOnIfAppropriate();
+}
 
 Landmine::Landmine(StudentWorld * sw, double x, double y)
 	:Actor(sw, IID_LANDMINE, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 1)
@@ -210,8 +219,8 @@ Human::Human(StudentWorld* sw, int imageID, double x, double y)
 	: Agent(sw, imageID,  x, y, right)
 {}
 
-void Human::getVomitedOn(){
-	return;
+void Human::beVomitedOnIfAppropriate(){
+	m_nInfections++;
 }
 
 bool Human::blocksMovement() const{
@@ -334,7 +343,8 @@ void Penelope::useExitIfAppropriate(){
 }
 
 void Penelope::dieByFallOrBurnIfAppropriate(){
-	cerr << "penelope died" << endl;
+	setDead();
+	getWorld()->playSound(SOUND_PLAYER_DIE);
 }
 
 void Penelope::pickUpGoodieIfAppropriate(Goodie * g)
@@ -382,7 +392,10 @@ void Citizen::doSomething(){}
 
 void Citizen::useExitIfAppropriate(){}
 
-void Citizen::dieByFallOrBurnIfAppropriate(){}
+void Citizen::dieByFallOrBurnIfAppropriate(){
+	setDead();
+	getWorld()->playSound(SOUND_CITIZEN_DIE);
+}
 
 Zombie::Zombie(StudentWorld * sw, double x, double y)
 	:Agent(sw, IID_ZOMBIE, x, y, right)

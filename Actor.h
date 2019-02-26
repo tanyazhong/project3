@@ -64,6 +64,8 @@ public:
 	Vomit(StudentWorld* sw, double x, double y, int dir);
 	virtual void doSomething();
 	virtual void activateIfAppropriate(Actor* a);
+private:
+	int m_lifeSpan = 0;
 };
 
 class Landmine : public Actor{
@@ -114,7 +116,6 @@ public:
 class Zombie : public Agent{
 public:
 	Zombie(StudentWorld* sw, double x, double y);
-	
 };
 
 class DumbZombie : public Zombie{
@@ -135,7 +136,7 @@ public:
 class Human : public Agent {       //penelope, citizns
 public:
 	Human(StudentWorld* sw, int imageID, double x, double y);
-	void getVomitedOn();
+	void beVomitedOnIfAppropriate();
 	virtual bool blocksMovement() const;
 	bool isInfected() const;
 	int infectionDuration() const;
