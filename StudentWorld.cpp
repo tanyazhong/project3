@@ -83,7 +83,6 @@ int StudentWorld::init()
 			}
 		}
 	}
-	
 	return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -112,7 +111,6 @@ int StudentWorld::move()
 		else
 			it++;
 	}
-
 	return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -126,6 +124,12 @@ void StudentWorld::cleanUp()
 		delete temp;
 		it = m_actors.erase(it);
 	}
+}
+
+void StudentWorld::addActor(Actor * a)
+{
+	m_actors.push_back(a);
+	a->moveTo(a->getX()/SPRITE_WIDTH, a->getY()/SPRITE_HEIGHT);
 }
 
 

@@ -32,8 +32,6 @@ void Actor::dieByFallOrBurnIfAppropriate(){}
 void Actor::beVomitedOnIfAppropriate(){}
 void Actor::pickUpGoodieIfAppropriate(Goodie * g){}
 
-Actor::~Actor(){}
-
 StudentWorld* Actor::getWorld() const{
 	return m_world;
 }
@@ -86,10 +84,21 @@ Flame::Flame(StudentWorld * sw, double x, double y, int dir)
 	:Actor(sw, IID_FLAME, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, dir, 0)
 {}
 
-void Flame::doSomething(){}
+void Flame::doSomething(){
+	if (!isAlive())
+		return;
+	if (m_lifeSpan == 2){
+		setDead();
+		return;
+	}
+	getWorld()->activateOnAppropriateActors(this);
+	m_lifeSpan++;
+}
 
 void Flame::activateIfAppropriate(Actor * a)
-{}
+{
+	a->dieByFallOrBurnIfAppropriate();
+}
 
 Vomit::Vomit(StudentWorld * sw, double x, double y, int dir)
 	:Actor(sw, IID_VOMIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, dir, 0)
@@ -112,7 +121,14 @@ void Landmine::activateIfAppropriate(Actor * a)
 {}
 
 void Landmine::dieByFallOrBurnIfAppropriate()
-{}
+{
+	setDead();
+	getWorld()->playSound(SOUND_LANDMINE_EXPLODE); 
+	//theres more stuff you gotta do here
+	//
+	//
+	//Actor* f = new Flame(getWorld(), this->getX, this->getY)
+}
 
 Goodie::Goodie(StudentWorld * sw, int imageID, double x, double y)
 	:Actor(sw, imageID, x, y, right, 1)
@@ -122,8 +138,9 @@ void Goodie::activateIfAppropriate(Actor * a){
 	a->pickUpGoodieIfAppropriate(this);
 }
 
-void Goodie::dieByFallOrBurnIfAppropriate()
-{}
+void Goodie::dieByFallOrBurnIfAppropriate(){
+	setDead();
+}
 
 VaccineGoodie::VaccineGoodie(StudentWorld * sw, double x, double y)
 	:Goodie(sw, IID_VACCINE_GOODIE, SPRITE_WIDTH * x, SPRITE_WIDTH * y)
@@ -205,8 +222,13 @@ bool Human::isInfected() const{
 	return m_nInfections > 0;
 }
 
-int Human::infections() const{
+int Human::infectionDuration() const{
 	return m_nInfections;
+}
+
+void Human::clearInfection()
+{
+	m_nInfections = 0;
 }
 
 void Human::increaseInfections(){
@@ -224,7 +246,7 @@ void Penelope::doSomething()
 
 	if (isInfected()){
 		increaseInfections();
-		if (infections() == 500) {
+		if (infectionDuration() == 500) {
 			setDead();
 			getWorld()->playSound(SOUND_PLAYER_DIE);
 			return;
@@ -237,6 +259,11 @@ void Penelope::doSomething()
 		{ 
 		case KEY_PRESS_SPACE:
 			deployFlames(getDirection(), getX(), getY());
+			break;
+		case KEY_PRESS_TAB:
+			deployLandmine(getDirection(), getX(), getY());
+			break;
+		case KEY_PRESS_ENTER:
 			break;
 		case KEY_PRESS_LEFT:
 			movePenelope(left, getX() - 4, getY());
@@ -254,21 +281,51 @@ void Penelope::doSomething()
 }
 
 void Penelope::deployFlames(Direction d, double x, double y) {
+	if (m_nFlamethrowers == 0)
+		return;
 	m_nFlamethrowers--;
 	getWorld()->playSound(SOUND_PLAYER_FIRE);
 	double fx, fy;
-	switch (d)
-	{
-	case up:
-		for (int i = 0; i != 3; i++) {
+	for (int i = 1; i != 4; i++) {
+		switch (d) {
+		case up:
 			fx = x;
 			fy = y + i * SPRITE_HEIGHT;
-
-			if (getWorld()->isFlameBlockedAt(fx,fy))
-				break;
-
-			//new Flame(getWorld(), fx, fy, up); TRY USING STUDENT WORLD ADD ACTOR?
+			break;
+		case down:
+			fx = x;
+			fy = y - i * SPRITE_HEIGHT;
+			break;
+		case left:
+			fx = x - i * SPRITE_WIDTH;
+			fy = y;
+			break;
+		case right:
+			fx = x + i * SPRITE_WIDTH;
+			fy = y;
 		}
+		if (getWorld()->isFlameBlockedAt(fx, fy))
+			break;
+
+		Actor* f = new Flame(getWorld(), fx, fy, up);
+		getWorld()->addActor(f);
+	}
+}
+
+void Penelope::deployLandmine(Direction d, double x, double y)
+{
+	if (m_nLandmines > 0) {
+		Actor* l = new Landmine(getWorld(), x, y);
+		getWorld()->addActor(l);
+		m_nLandmines--;
+	}
+}
+
+void Penelope::vaccinate()
+{
+	if (m_nVaccines > 0) {
+		clearInfection();
+		m_nVaccines--;
 	}
 }
 
@@ -339,7 +396,18 @@ void DumbZombie::doSomething()
 {}
 
 void DumbZombie::dieByFallOrBurnIfAppropriate()
-{}
+{
+	setDead();
+	getWorld()->playSound(SOUND_ZOMBIE_DIE);
+	getWorld()->increaseScore(1000);
+	int n;
+	n = randInt(0, 9);  
+	if (n == 0) {
+		Actor* v = new VaccineGoodie(getWorld(), getX(), getY());
+		getWorld()->addActor(v);
+	}
+
+}
 
 SmartZombie::SmartZombie(StudentWorld * sw, double x, double y)
 	: Zombie(sw, SPRITE_WIDTH*x, SPRITE_HEIGHT* y)
@@ -349,4 +417,8 @@ void SmartZombie::doSomething()
 {}
 
 void SmartZombie::dieByFallOrBurnIfAppropriate()
-{}
+{
+	setDead();
+	getWorld()->playSound(SOUND_ZOMBIE_DIE);
+	getWorld()->increaseScore(2000);
+}

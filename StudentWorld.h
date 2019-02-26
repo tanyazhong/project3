@@ -18,6 +18,7 @@ public:
     virtual int init();
     virtual int move();
     virtual void cleanUp();
+	void addActor(Actor* a);
 	void activateOnAppropriateActors(Actor* a);
 	bool canMove(double x, double y) const;
 	bool isFlameBlockedAt(double x, double y) const;

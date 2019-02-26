@@ -22,7 +22,6 @@ public:
 	virtual void dieByFallOrBurnIfAppropriate();
 	virtual void beVomitedOnIfAppropriate();
 	virtual void pickUpGoodieIfAppropriate(Goodie * g);
-	virtual ~Actor();
 private:
 	StudentWorld* m_world;
 	bool m_alive = true;
@@ -56,6 +55,8 @@ public:
 	Flame(StudentWorld* sw, double x, double y, int dir);
 	virtual void doSomething();
 	virtual void activateIfAppropriate(Actor* a);
+private:
+	int m_lifeSpan = 0;
 };
 
 class Vomit : public Actor{
@@ -137,7 +138,8 @@ public:
 	void getVomitedOn();
 	virtual bool blocksMovement() const;
 	bool isInfected() const;
-	int infections() const;
+	int infectionDuration() const;
+	void clearInfection();
 	void increaseInfections();
 private:
 	int m_nInfections = 0;
@@ -160,6 +162,8 @@ public:
 private:
 	void movePenelope(Direction d, double x, double y);
 	void deployFlames(Direction d, double x, double y);
+	void deployLandmine(Direction d, double x, double y);
+	void vaccinate();
 	int m_nLandmines = 0;
 	int m_nFlamethrowers = 0;
 	int m_nVaccines = 0;
