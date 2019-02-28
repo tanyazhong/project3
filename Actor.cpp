@@ -133,6 +133,7 @@ void Vomit::doSomething()
 		return;
 	}
 	getWorld()->activateOnAppropriateActors(this);
+	m_lifeSpan++;
 }
 
 void Vomit::activateIfAppropriate(Actor * a)
@@ -248,6 +249,11 @@ void Human::beVomitedOnIfAppropriate(){
 	m_nInfections++;
 }
 
+bool Human::triggersZombieVomit() const
+{
+	return true;
+}
+
 bool Human::isInfected() const{
 	return m_nInfections > 0;
 }
@@ -264,6 +270,13 @@ void Human::increaseInfections(){
 	m_nInfections++;
 }
 
+void Human::moveAgent(Direction d, double x, double y) {
+	if (getWorld()->canMove(x, y, this)) {
+		setDirection(d);
+		moveTo(x, y);
+	}
+}
+
 Penelope::Penelope(StudentWorld* sw, double x, double y) 
 	: Human(sw, IID_PLAYER, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
 {}
@@ -272,7 +285,6 @@ void Penelope::doSomething()
 {
 	if (!isAlive())
 		return;
-
 	if (isInfected()){
 		increaseInfections();
 		if (infectionDuration() == 500) {
@@ -281,7 +293,6 @@ void Penelope::doSomething()
 			return;
 		}
 	}
-
 	int ch;
 	if (getWorld()->getKey(ch)) { // user hit a key during this tick!
 		switch (ch)
@@ -324,20 +335,13 @@ void Penelope::deployFlames(Direction d, double x, double y) {
 	for (int i = 1; i != 4; i++) {
 		switch (d) {
 		case up:
-			fx = x;
-			fy = y + i * SPRITE_HEIGHT;
-			break;
+			fx = x; fy = y + i * SPRITE_HEIGHT;	break;
 		case down:
-			fx = x;
-			fy = y - i * SPRITE_HEIGHT;
-			break;
+			fx = x; fy = y - i * SPRITE_HEIGHT; break;
 		case left:
-			fx = x - i * SPRITE_WIDTH;
-			fy = y;
-			break;
+			fx = x - i * SPRITE_WIDTH; fy = y; break;
 		case right:
-			fx = x + i * SPRITE_WIDTH;
-			fy = y;
+			fx = x + i * SPRITE_WIDTH; fy = y;
 		}
 		if (getWorld()->isFlameBlockedAt(fx, fy))
 			break;
@@ -407,13 +411,12 @@ int Penelope::getNumLandmines() const{
 	return m_nLandmines;
 }
 
-
-
 Citizen::Citizen(StudentWorld * sw, double x, double y)
 	:Human(sw,IID_CITIZEN, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
 {}
 
 void Citizen::doSomething(){
+	double cx = getX(); double cy = getY();
 	if (!isAlive())
 		return;
 	if (isInfected())
@@ -425,9 +428,9 @@ void Citizen::doSomething(){
 		int n = randInt(0, 9);
 		Actor* z;
 		if (n < 3)     //0 1 or 2
-			z = new SmartZombie(getWorld(), getX() / SPRITE_WIDTH, getY() / SPRITE_HEIGHT);
+			z = new SmartZombie(getWorld(), cx / SPRITE_WIDTH, cy / SPRITE_HEIGHT);
 		else
-			z = new DumbZombie(getWorld(), getX() / SPRITE_WIDTH, getY() / SPRITE_HEIGHT);
+			z = new DumbZombie(getWorld(), cx / SPRITE_WIDTH, cy / SPRITE_HEIGHT);
 		getWorld()->addActor(z);
 		return;
 	}
@@ -438,12 +441,12 @@ void Citizen::doSomething(){
 	
 	bool isThreat;
 	double ox, oy, d, dx, dy;
-	if (!getWorld()->locateNearestCitizenTrigger(getX(), getY(), ox, oy, d, isThreat)) {      //no triggers
+	if (!getWorld()->locateNearestCitizenTrigger(cx, cy, ox, oy, d, isThreat)) {      //no triggers
 		m_paralyzed = true;
 		return;
 	}
 
-	dx = ox - getX(); dy = oy - getY();
+	dx = ox - cx; dy = oy - cy;
 	Direction xtoP, ytoP;
 	if (dy > 0)
 		ytoP = up;
@@ -455,73 +458,68 @@ void Citizen::doSomething(){
 		xtoP = left;
 
 	if (!isThreat && d <= 80 * 80) {               //penelope is near
-		if (getX() == ox) {     //same column
+		if (cx == ox) {     //same column
 			if (ytoP == up)        //pen is above
-				moveAgent(up, getX(), getY() + 2);
-			else 
-				moveAgent(down, getX(), getY() - 2);
-		}
-		else if (getY() == oy){
-			if (xtoP == right)        //pen is right
-				moveAgent(right, getX() + 2, getY());
+				cy += 2;
 			else
-				moveAgent(left, getX() - 2, getY());
+				cy -= 2;
+			moveAgent(ytoP, cx, cy);
+			m_paralyzed = true;
+			return;
 		}
-		else {
-			int n = randInt(0, 1);                           //THIS IS IF ELSE HELL
-			if (n == 0) {      //move vertically
-				if (ytoP == up) {     
-					if (getWorld()->canMove(getX(), getY() + 2, this))           //if can move there, move
-						moveAgent(up, getX(), getY() + 2);
-					else if (xtoP == right)                                //if you cant, move horizontally
-						moveAgent(right, getX() + 2, getY());
-					else
-						moveAgent(left, getX() - 2, getY());
-				}
-				else {  
-					if (getWorld()->canMove(getX(), getY() - 2, this))
-						moveAgent(down, getX(), getY() - 2);
-					else if (xtoP == right)
-						moveAgent(right, getX() + 2, getY());
-					else
-						moveAgent(left, getX() - 2, getY());
-				}
+		else if (cy == oy){
+			if (xtoP == right)        //pen is right
+				cx += 2; 
+			else
+				cx -= 2;
+			moveAgent(xtoP, cx, cy);
+			m_paralyzed = true;
+			return;
+		}
+
+		int n = randInt(0, 1);                           //THIS IS IF ELSE HELL
+		if (n == 0) {      //move vertically
+			if (ytoP == up) 
+				cy += 2;
+			else
+				cy -= 2;
+
+			if (getWorld()->canMove(cx, cy, this))          //if can move there, move
+				moveAgent(ytoP, cx, cy);
+			else {                                         //else try moving horizontally
+				if (xtoP == right)
+					cx += 2;
+				else
+					cx -= 2;
+				moveAgent(xtoP, cx, cy);
 			}
-			else {        //move horizontally
-				if (xtoP == right) {
-					if (getWorld()->canMove(getX() + 2, getY(), this))
-						moveAgent(right, getX() + 2, getY());
-					else if (ytoP == up)       
-						moveAgent(up, getX(), getY() + 2);
-					else
-						moveAgent(down, getX(), getY() - 2);
-				}
-				else {
-					if (getWorld()->canMove(getX() - 2, getY(), this))
-						moveAgent(left, getX() - 2, getY());
-					else if (ytoP == up)
-						moveAgent(up, getX(), getY() + 2);
-					else
-						moveAgent(down, getX(), getY() - 2);
-				}
-			}			
 		}
+		else {        //move horizontally
+			if (xtoP == right)
+				cx += 2;
+			else
+				cx -= 2;
+
+			if (getWorld()->canMove(cx, cy, this))
+				moveAgent(xtoP, cx, cy);
+			else {
+				if (ytoP == up)        //pen is above
+					cy += 2;
+				else
+					cy -= 2;
+				moveAgent(ytoP, cx, cy);
+			}
+		}
+		m_paralyzed = true;
+		return;
 	}
 
 	if (getWorld()->locateNearestCitizenThreat(getX(), getY(), ox, oy, d)) {
-		if(d <= 80 * 80)
+		if (d <= 80 * 80)
+			; //MORE TO DO HERE
 	}
-
-
 
 	m_paralyzed = true;
-}
-
-void Citizen::moveAgent(Direction d, double x, double y) {
-	if (getWorld()->canMove(x, y, this)) {
-		setDirection(d);
-		moveTo(x, y);
-	}
 }
 
 void Citizen::useExitIfAppropriate(){}
@@ -536,19 +534,53 @@ Zombie::Zombie(StudentWorld * sw, double x, double y)
 {}
 
 void Zombie::moveAgent(Direction d, double x, double y)
-{
-}
+{}
 
 bool Zombie::triggersCitizens() const {
 	return true;
 }
 
-bool Zombie::threatensCitizens() const
-{
+bool Zombie::threatensCitizens() const {
 	return true;
 }
 
+int Zombie::getPlan() const {
+	return m_planDist;
+}
+
+void Zombie::setPlan(int p) {
+	m_planDist = p;
+}
+
+void Zombie::decPlan() {
+	m_planDist--;
+}
+
 Zombie::~Zombie() {}
+
+bool Zombie::shouldIVomit(double vx, double vy, Direction zd) const
+{
+	switch (zd) {
+	case up:
+		vy += SPRITE_HEIGHT; break;
+	case down:
+		vy -= SPRITE_HEIGHT; break;
+	case right:
+		vx += SPRITE_WIDTH; break;
+	case left:
+		vx -= SPRITE_WIDTH;
+	}
+	if (getWorld()->isZombieVomitTriggerAt(vx, vy)) {
+		int n = randInt(0, 2);
+		if (n == 0) {
+			Actor* v = new Vomit(getWorld(), vx / SPRITE_WIDTH, vy / SPRITE_HEIGHT, getDirection());
+			getWorld()->addActor(v);
+			getWorld()->playSound(SOUND_ZOMBIE_VOMIT);
+			return true;
+		}
+	}
+	return false;
+}
 
 
 DumbZombie::DumbZombie(StudentWorld * sw, double x, double y)
@@ -556,7 +588,51 @@ DumbZombie::DumbZombie(StudentWorld * sw, double x, double y)
 {}
 
 void DumbZombie::doSomething()
-{}
+{
+	if (!isAlive())
+		return;
+	if (m_paralyzed) {
+		m_paralyzed = false;
+		return;
+	}
+	if (shouldIVomit(getX(), getY(), getDirection())){
+		m_paralyzed = true;
+		return;
+	}
+	if (getPlan() == 0) {
+		setPlan(randInt(3, 10));
+		int n = randInt(0, 3);
+		switch (n) {
+		case 0:
+			setDirection(up); break;
+		case 1:
+			setDirection(down); break;
+		case 2:
+			setDirection(right); break;
+		case 3:
+			setDirection(left);
+		}
+	}
+	double zx = getX(); double zy = getY();
+	Direction zd = getDirection();
+	switch (zd) {
+	case up:
+		zy++; break;
+	case down: 
+		zy--; break;
+	case right: 
+		zx++; break;
+	case left:
+		zx--;
+	}
+	if (getWorld()->canMove(zx, zy, this)) {
+		moveTo(zx, zy);
+		decPlan();
+	}
+	else
+		setPlan(0);
+	m_paralyzed = true;
+}
 
 void DumbZombie::dieByFallOrBurnIfAppropriate()
 {
@@ -569,7 +645,6 @@ void DumbZombie::dieByFallOrBurnIfAppropriate()
 		Actor* v = new VaccineGoodie(getWorld(), getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT);
 		getWorld()->addActor(v);
 	}
-
 }
 
 SmartZombie::SmartZombie(StudentWorld * sw, double x, double y)
@@ -577,10 +652,81 @@ SmartZombie::SmartZombie(StudentWorld * sw, double x, double y)
 {}
 
 void SmartZombie::doSomething()
-{}
-
-void SmartZombie::dieByFallOrBurnIfAppropriate()
 {
+	if (!isAlive())
+		return;
+	if (m_paralyzed) {
+		m_paralyzed = false;
+		return;
+	}
+	double zx = getX(); double zy = getY();
+	double ox, oy, d;
+	if (shouldIVomit(zx, zy, getDirection())) {
+		m_paralyzed = true;
+		return;
+	}
+	if (getPlan() == 0) {
+		setPlan(randInt(3, 10));
+		getWorld()->locateNearestVomitTrigger(zx, zy, ox, oy, d);
+		if (d > 80 * 80) {
+			int n = randInt(0, 3);
+			switch (n) {
+			case 0:
+				setDirection(up); break;
+			case 1:
+				setDirection(down); break;
+			case 2:
+				setDirection(right); break;
+			case 3:
+				setDirection(left);
+			}
+		}
+		else {
+			double dx = ox - zx; double dy = oy - zy;
+			Direction xtoP, ytoP;
+			if (dy > 0)
+				ytoP = up;
+			else
+				ytoP = down;
+			if (dx > 0)
+				xtoP = right;
+			else
+				xtoP = left;
+
+			if (zx == ox) //same column
+				setDirection(ytoP);
+			else if (zy == oy)
+				setDirection(xtoP);
+			else {
+				int n = randInt(0, 1);
+				if (n == 0)
+					setDirection(ytoP);
+				else
+					setDirection(xtoP);
+			}
+		}
+	}
+	Direction zd = getDirection();
+	switch (zd) {
+	case up:
+		zy++; break;
+	case down:
+		zy--; break;
+	case right:
+		zx++; break;
+	case left:
+		zx--;
+	}
+	if (getWorld()->canMove(zx, zy, this)) {
+		moveTo(zx, zy);
+		decPlan();
+	}
+	else
+		setPlan(0);
+	m_paralyzed = true;
+}
+
+void SmartZombie::dieByFallOrBurnIfAppropriate() {
 	setDead();
 	getWorld()->playSound(SOUND_ZOMBIE_DIE);
 	getWorld()->increaseScore(2000);

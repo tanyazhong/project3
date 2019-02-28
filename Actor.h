@@ -127,7 +127,13 @@ public:
 	virtual void moveAgent(Direction d, double x, double y);
 	virtual bool triggersCitizens() const;
 	virtual bool threatensCitizens() const;
+	int getPlan() const;
+	void setPlan(int p);
+	void decPlan();
 	virtual ~Zombie();
+	bool shouldIVomit(double vx, double vy, Direction zd) const;
+private:
+	int m_planDist = 0;
 };
 
 class DumbZombie : public Zombie{
@@ -135,6 +141,8 @@ public:
 	DumbZombie(StudentWorld* sw, double x, double y);
 	virtual void doSomething();
 	virtual void dieByFallOrBurnIfAppropriate();
+private:
+	bool m_paralyzed = false;
 };
 
 class SmartZombie : public Zombie
@@ -143,16 +151,20 @@ public:
 	SmartZombie(StudentWorld* sw, double x, double y);
 	virtual void doSomething();
 	virtual void dieByFallOrBurnIfAppropriate();
+private:
+	bool m_paralyzed = false;
 };
 
 class Human : public Agent {       //penelope, citizns
 public:
 	Human(StudentWorld* sw, int imageID, double x, double y);
-	void beVomitedOnIfAppropriate();
+	virtual void beVomitedOnIfAppropriate();
+	virtual bool triggersZombieVomit() const;
 	bool isInfected() const;          //returns m_ninfections > 0
 	int infectionDuration() const;    //returns m_ninfections
 	void clearInfection();            //sets to zero
 	void increaseInfections();       //increases by 1
+	virtual void moveAgent(Direction d, double x, double y);
 private:
 	int m_nInfections = 0;
 };
@@ -189,7 +201,6 @@ public:
 	virtual void doSomething();
 	virtual void useExitIfAppropriate();
 	virtual void dieByFallOrBurnIfAppropriate();
-	virtual void moveAgent(Direction d, double x, double y);
 private:
 	bool m_paralyzed = false;
 };

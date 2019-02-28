@@ -4,6 +4,9 @@
 #include <vector>
 #include "Level.h"
 #include "Actor.h"
+#include <iostream> // defines the overloads of the << operator
+#include <sstream>  // defines the type std::ostringstream
+#include <iomanip>
 using namespace std;
 class Actor;
 
@@ -24,7 +27,7 @@ int StudentWorld::init()
 {	
 	Level curLev(assetPath());
 	
-	Level::LoadResult result = curLev.loadLevel("level01.txt");
+	Level::LoadResult result = curLev.loadLevel("level04.txt");
 	if (result == Level::load_fail_file_not_found)
 		cerr << "Cannot find data file" << endl;
 	else if (result == Level::load_fail_bad_format)
@@ -111,6 +114,15 @@ int StudentWorld::move()
 		else
 			it++;
 	}
+
+	ostringstream oss;
+	int k = getScore();
+	oss << "Score: ";
+	oss.fill('0');
+	oss << setw(6) << k;
+	string s = oss.str();
+	setGameStatText(s);
+
 	return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -126,11 +138,9 @@ void StudentWorld::cleanUp()
 	}
 }
 
-void StudentWorld::addActor(Actor * a)
-{
+void StudentWorld::addActor(Actor * a) {
 	m_actors.push_back(a);
 }
-
 
 StudentWorld::~StudentWorld() {
 	cleanUp();
@@ -243,7 +253,7 @@ bool StudentWorld::locateNearestCitizenTrigger(double x, double y, double & othe
 	}
 	
 	double pdx = x - px; double pdy = y - py;
-	double pdist = (pdx * pdx + pdy * pdy);
+	double pdist = pdx * pdx + pdy * pdy;
 	if (locateNearestCitizenThreat(x, y, otherX, otherY, distance)) {  // a zombie exists
 		if (distance <= pdist) {
 			isThreat = true;
@@ -274,4 +284,50 @@ bool StudentWorld::locateNearestCitizenThreat(double x, double y, double & other
 		}
 	}
 	return z;
+}
+
+bool StudentWorld::isZombieVomitTriggerAt(double x, double y) const
+{
+	const int distance = 10;
+	vector<Actor*>::const_iterator it;
+	double deltaX, deltaY;
+	for (it = m_actors.begin(); it != m_actors.end(); it++)	{
+		if ((*it)->triggersZombieVomit()) {
+			deltaX = x - (*it)->getX(); deltaY = y - (*it)->getY();
+			if (deltaX * deltaX + deltaY * deltaY <= distance * distance)  
+				return true;
+		}
+	}
+	deltaX = x - m_pen->getX(); deltaY = y - m_pen->getY();      //now check penelope
+	if (deltaX * deltaX + deltaY * deltaY <= distance * distance)
+		return true;
+	else
+		return false;
+}
+
+bool StudentWorld::locateNearestVomitTrigger(double x, double y, double & otherX, double & otherY, double & distance)
+{ 
+	bool c;
+	double dx = 256; double dy = 256;
+	vector<Actor*>::const_iterator it;
+	for (it = m_actors.begin(); it != m_actors.end(); it++) {
+		if ((*it)->triggersZombieVomit()) {
+			double cx = (*it)->getX(); double cy = (*it)->getY();
+			double cdx = x - cx; double cdy = y - cy;
+			if (cdx * cdx + cdy * cdy < dx * dx + dy * dy) {   //zombie is current closest
+				dx = cdx; dy = cdy; //set the distance
+				otherX = cx; otherY = cy; //set the locations
+				distance = dx * dx + dy * dy;
+				c = true;
+			}
+		}
+	}
+	double pdx = x - m_pen->getX(); double pdy = y - m_pen->getY();
+	double pdist = pdx * pdx + pdy * pdy;
+	if (c) 
+		if (distance <= pdist) 
+			return true;
+	otherX = m_pen->getX(); otherY = m_pen->getY();
+	distance = pdist;
+	return true;
 }

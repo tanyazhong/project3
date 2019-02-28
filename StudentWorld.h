@@ -24,6 +24,8 @@ public:
 	bool isFlameBlockedAt(double x, double y) const;
 	bool locateNearestCitizenTrigger(double x, double y, double& otherX, double& otherY, double& distance, bool& isThreat) const;
 	bool locateNearestCitizenThreat(double x, double y, double& otherX, double& otherY, double& distance) const;
+	bool isZombieVomitTriggerAt(double x, double y) const;
+	bool locateNearestVomitTrigger(double x, double y, double& otherX, double& otherY, double& distance);
 	virtual ~StudentWorld();
 	
 private:
