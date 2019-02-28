@@ -79,6 +79,10 @@ public:
 	virtual void doSomething();
 	virtual void activateIfAppropriate(Actor* a);
 	virtual void dieByFallOrBurnIfAppropriate();
+	bool active() const;
+private:
+	void explode(double x, double y);
+	int m_nSafeTicks = 30;
 };
 
 class Goodie : public Actor{
@@ -114,17 +118,15 @@ public:
 class Agent : public Actor{
 public:
 	Agent(StudentWorld* w, int imageID, double x, double y, int dir);
-	virtual void moveAgent(Direction d, double x, double y) = 0;
+	virtual void moveAgent(Direction d, double x, double y);
 	virtual bool blocksMovement() const;
 	virtual bool triggersOnlyActiveLandmines() const;
 	virtual ~Agent();
 };
 
-
 class Zombie : public Agent{
 public:
 	Zombie(StudentWorld* sw, double x, double y);
-	virtual void moveAgent(Direction d, double x, double y);
 	virtual bool triggersCitizens() const;
 	virtual bool threatensCitizens() const;
 	int getPlan() const;
@@ -164,7 +166,6 @@ public:
 	int infectionDuration() const;    //returns m_ninfections
 	void clearInfection();            //sets to zero
 	void increaseInfections();       //increases by 1
-	virtual void moveAgent(Direction d, double x, double y);
 private:
 	int m_nInfections = 0;
 };

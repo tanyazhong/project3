@@ -21,6 +21,7 @@ public:
 	void addActor(Actor* a);
 	void activateOnAppropriateActors(Actor* a);
 	void recordCitizenGone();
+	void recordLevelFinishedIfAllCitizensGone();
 	bool citizensLeft() const;
 	bool canMove(double x, double y, Actor* a) const;
 	bool isFlameBlockedAt(double x, double y) const;
@@ -34,6 +35,7 @@ private:
 	std::vector<Actor*> m_actors;
 	Penelope* m_pen;
 	int m_nCitizens;
+	bool m_levFinished = false;
 };
 
 

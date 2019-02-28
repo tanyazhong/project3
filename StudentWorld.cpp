@@ -19,17 +19,22 @@ GameWorld* createStudentWorld(string assetPath)
 // Students:  Add code to this file, StudentWorld.h, Actor.h and Actor.cpp
 
 StudentWorld::StudentWorld(string assetPath)       //constructor
-: GameWorld(assetPath), m_actors()
+: GameWorld(assetPath), m_actors(), m_nCitizens(0)
 {
 }
 
 int StudentWorld::init()
 {	
+	int level =  getLevel();
+	ostringstream levtxt;
+	levtxt.fill('0');
+	levtxt << "level";
+	levtxt << setw(2) << level << ".txt";
+	string leveltext = levtxt.str();
 	Level curLev(assetPath());
-	
-	Level::LoadResult result = curLev.loadLevel("level04.txt");
+	Level::LoadResult result = curLev.loadLevel(leveltext);
 	if (result == Level::load_fail_file_not_found)
-		cerr << "Cannot find data file" << endl;
+		cerr << "Cannot find data file " << leveltext << endl;
 	else if (result == Level::load_fail_bad_format)
 		cerr << "Your level was improperly formatted" << endl;
 	else if (result == Level::load_success)
@@ -62,6 +67,7 @@ int StudentWorld::init()
 				case Level::citizen:
 					a = new Citizen(this, i, j);
 					m_actors.push_back(a);
+					m_nCitizens++;
 					break;
 				case Level::dumb_zombie:
 					a = new DumbZombie(this, i, j);
@@ -86,18 +92,21 @@ int StudentWorld::init()
 			}
 		}
 	}
+	m_levFinished = false;
 	return GWSTATUS_CONTINUE_GAME;
 }
 
 
 int StudentWorld::move()
 {
-
-// Give each actor a chance to do something, including Penelope
-	if (m_pen->isAlive()) {
+	if (m_pen->isAlive()) 
 		m_pen->doSomething();
-	}
-	
+	else
+		return GWSTATUS_PLAYER_DIED;
+
+	if (m_levFinished)
+		return GWSTATUS_FINISHED_LEVEL;
+
 	int n = m_actors.size();
 	for(int i = 0; i != n; i++)
 	{
@@ -119,15 +128,19 @@ int StudentWorld::move()
 	ostringstream oss;
 	oss << "Score: ";
 	oss.fill('0');
-	if (getScore() < 0)
+	if (getScore() < 0) {
 		oss << "-";
-	oss << setw(6) << getScore();
+		oss << setw(5) << -getScore();
+	}
+	else {
+		oss << setw(6) << getScore();
+	}
 	oss << "  Level: ";
 	oss << setw(2) << getLevel();
 	oss << "  Lives: " << getLives();
-	oss << "  Vaccines: " << m_pen->getNumVaccines();
-	oss << "  Flames: " << m_pen->getNumFlameCharges();
-	oss << "  Mines: " << m_pen->getNumLandmines();
+	oss << "  Vaccines: " <<  m_pen->getNumVaccines();
+	oss << "  Flames: " <<  m_pen->getNumFlameCharges();
+	oss << "  Mines: " <<  m_pen->getNumLandmines();
 	oss << "  Infected: " << m_pen->infectionDuration();
 	string s = oss.str();
 	setGameStatText(s);
@@ -174,6 +187,21 @@ void StudentWorld::activateOnAppropriateActors(Actor* a)
 	deltaY = actY - m_pen->getY();
 	if (deltaX * deltaX + deltaY * deltaY <= distance * distance)   //pen overlaps
 		a->activateIfAppropriate(m_pen);
+}
+
+void StudentWorld::recordCitizenGone()
+{
+	m_nCitizens--;
+}
+
+void StudentWorld::recordLevelFinishedIfAllCitizensGone()
+{
+	m_levFinished = true;
+}
+
+bool StudentWorld::citizensLeft() const
+{
+	return m_nCitizens > 0;
 }
 
 
@@ -340,3 +368,5 @@ bool StudentWorld::locateNearestVomitTrigger(double x, double y, double & otherX
 	distance = pdist;
 	return true;
 }
+
+

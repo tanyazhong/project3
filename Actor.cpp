@@ -10,96 +10,77 @@ Actor::Actor(StudentWorld* sw, int imageID, double startX, double startY, Direct
 {
 }
 
-bool Actor::isAlive() const{
+bool Actor::isAlive() const {
 	return m_alive;
 }
-
 void Actor::setDead(){
 	m_alive = false;
 }
-
 bool Actor::blocksMovement() const{
 	return false;
 }
-
 bool Actor::blocksFlame() const{
 	return false;
 }
-
-bool Actor::triggersOnlyActiveLandmines() const
-{
+bool Actor::triggersOnlyActiveLandmines() const {
 	return false;
 }
-
-bool Actor::triggersZombieVomit() const
-{
+bool Actor::triggersZombieVomit() const {
 	return false;
 }
-
-bool Actor::threatensCitizens() const
-{
+bool Actor::threatensCitizens() const {
 	return false;
 }
-
 bool Actor::triggersCitizens() const {
 	return false;
 }
-
 Actor::~Actor(){}
-
 void Actor::activateIfAppropriate(Actor * a){}
 void Actor::useExitIfAppropriate(){}
 void Actor::dieByFallOrBurnIfAppropriate(){}
 void Actor::beVomitedOnIfAppropriate(){}
 void Actor::pickUpGoodieIfAppropriate(Goodie * g){}
-
 StudentWorld* Actor::getWorld() const{
 	return m_world;
 }
 
-//Wall functions
+
 Wall::Wall(StudentWorld* sw, double x, double y)
 	: Actor(sw, IID_WALL, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0)
 {}
-
 void Wall::doSomething(){}
-
 bool Wall::blocksMovement() const {
 	return true;
 }
-
 bool Wall::blocksFlame() const{
 	return true;
 }
 
-//exit funcs
+
 Exit::Exit(StudentWorld * sw, double x, double y)
 	: Actor(sw, IID_EXIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 1)
 {}
-
 void Exit::doSomething(){
 	getWorld()->activateOnAppropriateActors(this);   
 }
-
 void Exit::activateIfAppropriate(Actor * a){
 	a->useExitIfAppropriate();
 }
-
 bool Exit::blocksFlame() const{
 	return true;
 }
 
+
 Pit::Pit(StudentWorld * sw, double x, double y)
 	: Actor(sw, IID_PIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0)
 {}
-
 void Pit::doSomething(){
 	getWorld()->activateOnAppropriateActors(this);
 }
-
 void Pit::activateIfAppropriate(Actor * a){
 	a->dieByFallOrBurnIfAppropriate();
 }
+
 
 Flame::Flame(StudentWorld * sw, double x, double y, int dir)
 	:Actor(sw, IID_FLAME, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, dir, 0)
@@ -115,10 +96,10 @@ void Flame::doSomething(){
 	getWorld()->activateOnAppropriateActors(this);
 	m_lifeSpan++;
 }
-
 void Flame::activateIfAppropriate(Actor * a){
 	a->dieByFallOrBurnIfAppropriate();
 }
+
 
 Vomit::Vomit(StudentWorld * sw, double x, double y, int dir)
 	:Actor(sw, IID_VOMIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, dir, 0)
@@ -140,39 +121,88 @@ void Vomit::activateIfAppropriate(Actor * a) {
 	a->beVomitedOnIfAppropriate();
 }
 
+
 Landmine::Landmine(StudentWorld * sw, double x, double y)
 	:Actor(sw, IID_LANDMINE, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 1)
 {}
 
 void Landmine::doSomething()
-{}
+{
+	if (!isAlive())
+		return;
+	if (!active()) {
+		m_nSafeTicks--;
+		return;
+	}
+	getWorld()->activateOnAppropriateActors(this);
+}
 
-void Landmine::activateIfAppropriate(Actor * a)
-{}
+void Landmine::activateIfAppropriate(Actor * a) {
+	if (a->triggersOnlyActiveLandmines()) {
+		setDead();
+		getWorld()->playSound(SOUND_LANDMINE_EXPLODE);
+		explode(getX(), getY());
+	}
+}
 
 void Landmine::dieByFallOrBurnIfAppropriate()
 {
 	setDead();
 	getWorld()->playSound(SOUND_LANDMINE_EXPLODE); 
-	//theres more stuff you gotta do here
-	//
-	//
-	//Actor* f = new Flame(getWorld(), this->getX, this->getY)
+	explode(getX(), getY());
 }
+
+void Landmine::explode(double x, double y)
+{
+	double fx = x / SPRITE_WIDTH;
+	double fy = y / SPRITE_HEIGHT;
+	StudentWorld* sw = getWorld();
+	//middle flame
+	Actor* f = new Flame(sw, fx, fy, up);   
+	sw->addActor(f);
+
+	//top row
+	f = new Flame(sw, fx - 1, fy + 1, up);
+	sw->addActor(f);
+	f = new Flame(sw, fx, fy + 1, up);
+	sw->addActor(f);
+	f = new Flame(sw, fx + 1, fy + 1, up);
+	sw->addActor(f);
+
+	//middle row
+	f = new Flame(sw, fx - 1, fy, up);
+	sw->addActor(f);
+	f = new Flame(sw, fx + 1, fy, up);
+	sw->addActor(f);
+
+	//bottom row
+	f = new Flame(sw, fx - 1, fy - 1, up);
+	sw->addActor(f);
+	f = new Flame(sw, fx, fy - 1, up);
+	sw->addActor(f);
+	f = new Flame(sw, fx + 1, fy - 1, up);
+	sw->addActor(f);
+
+	f = new Pit(sw, fx, fy);
+	sw->addActor(f);
+}
+
+bool Landmine::active() const {
+	return m_nSafeTicks == 0;
+}
+
 
 Goodie::Goodie(StudentWorld * sw, int imageID, double x, double y)
 	:Actor(sw, imageID, x, y, right, 1)
 {}
-
 void Goodie::activateIfAppropriate(Actor * a){
 	a->pickUpGoodieIfAppropriate(this);
 }
-
 void Goodie::dieByFallOrBurnIfAppropriate(){
 	setDead();
 }
-
 Goodie::~Goodie(){}
+
 
 VaccineGoodie::VaccineGoodie(StudentWorld * sw, double x, double y)
 	:Goodie(sw, IID_VACCINE_GOODIE, SPRITE_WIDTH * x, SPRITE_WIDTH * y)
@@ -225,50 +255,40 @@ void LandmineGoodie::pickUp(Penelope * p)
 	this->setDead();
 }
 
-
 Agent::Agent(StudentWorld* sw, int imageID, double x, double y, int dir) 
 	:Actor(sw, imageID, x, y, dir, 0)
 {}
-
 bool Agent::blocksMovement() const{
 	return true;
 }
-
 bool Agent::triggersOnlyActiveLandmines() const{
-	return false;
+	return true;
 }
-
 Agent::~Agent(){}
+
 
 Human::Human(StudentWorld* sw, int imageID, double x, double y)
 	: Agent(sw, imageID,  x, y, right)
 {}
-
 void Human::beVomitedOnIfAppropriate(){
 	m_nInfections++;
 }
-
 bool Human::triggersZombieVomit() const {
 	return true;
 }
-
 bool Human::isInfected() const{
 	return m_nInfections > 0;
 }
-
 int Human::infectionDuration() const{
 	return m_nInfections;
 }
-
 void Human::clearInfection(){
 	m_nInfections = 0;
 }
-
 void Human::increaseInfections(){
 	m_nInfections++;
 }
-
-void Human::moveAgent(Direction d, double x, double y) {
+void Agent::moveAgent(Direction d, double x, double y) {
 	if (getWorld()->canMove(x, y, this)) {
 		setDirection(d);
 		moveTo(x, y);
@@ -369,7 +389,7 @@ void Penelope::vaccinate()
 void Penelope::useExitIfAppropriate(){
 	if (getWorld()->citizensLeft())
 		return;
-	//inform world level finished
+	getWorld()->recordLevelFinishedIfAllCitizensGone();
 }
 
 void Penelope::dieByFallOrBurnIfAppropriate(){
@@ -424,6 +444,7 @@ void Citizen::doSomething(){
 		increaseInfections();
 	if (infectionDuration() == 500) {
 		setDead();
+		getWorld()->recordCitizenGone();
 		getWorld()->playSound(SOUND_ZOMBIE_BORN);
 		getWorld()->increaseScore(-1000);
 		int n = randInt(0, 9);
@@ -590,9 +611,6 @@ void Citizen::dieByFallOrBurnIfAppropriate(){
 
 Zombie::Zombie(StudentWorld * sw, double x, double y)
 	:Agent(sw, IID_ZOMBIE, x, y, right)
-{}
-
-void Zombie::moveAgent(Direction d, double x, double y)
 {}
 
 bool Zombie::triggersCitizens() const {
