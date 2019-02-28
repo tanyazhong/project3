@@ -92,34 +92,43 @@ int StudentWorld::init()
 
 int StudentWorld::move()
 {
+
 // Give each actor a chance to do something, including Penelope
 	if (m_pen->isAlive()) {
 		m_pen->doSomething();
 	}
 	
-	vector<Actor*>::iterator it;
-	for(it = m_actors.begin(); it != m_actors.end(); it++)
+	int n = m_actors.size();
+	for(int i = 0; i != n; i++)
 	{
-		(*it)->doSomething();
+		m_actors[i]->doSomething();
 	}
-
-	it = m_actors.begin();
+	
+	vector<Actor*>::iterator x = m_actors.begin();
 	Actor* temp;
-	while (it != m_actors.end()) {
-		if (!(*it)->isAlive()){
-			temp = *it;
+	while (x != m_actors.end()) {
+		if (!(*x)->isAlive()){
+			temp = *x;
 			delete temp;
-			it = m_actors.erase(it); //returns an iterator to the next element
+			x = m_actors.erase(x); //returns an iterator to the next element
 		}
 		else
-			it++;
+			x++;
 	}
-
+	
 	ostringstream oss;
-	int k = getScore();
 	oss << "Score: ";
 	oss.fill('0');
-	oss << setw(6) << k;
+	if (getScore() < 0)
+		oss << "-";
+	oss << setw(6) << getScore();
+	oss << "  Level: ";
+	oss << setw(2) << getLevel();
+	oss << "  Lives: " << getLives();
+	oss << "  Vaccines: " << m_pen->getNumVaccines();
+	oss << "  Flames: " << m_pen->getNumFlameCharges();
+	oss << "  Mines: " << m_pen->getNumLandmines();
+	oss << "  Infected: " << m_pen->infectionDuration();
 	string s = oss.str();
 	setGameStatText(s);
 
@@ -307,7 +316,7 @@ bool StudentWorld::isZombieVomitTriggerAt(double x, double y) const
 
 bool StudentWorld::locateNearestVomitTrigger(double x, double y, double & otherX, double & otherY, double & distance)
 { 
-	bool c;
+	bool c = false;
 	double dx = 256; double dy = 256;
 	vector<Actor*>::const_iterator it;
 	for (it = m_actors.begin(); it != m_actors.end(); it++) {

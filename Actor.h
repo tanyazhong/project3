@@ -202,6 +202,8 @@ public:
 	virtual void useExitIfAppropriate();
 	virtual void dieByFallOrBurnIfAppropriate();
 private:
+	double findZDist(double x, double y, bool b) const;
+	Direction findBestPath(double upd, double downd, double rightd, double leftd, double& cx, double& cy);
 	bool m_paralyzed = false;
 };
 

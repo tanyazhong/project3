@@ -136,8 +136,7 @@ void Vomit::doSomething()
 	m_lifeSpan++;
 }
 
-void Vomit::activateIfAppropriate(Actor * a)
-{
+void Vomit::activateIfAppropriate(Actor * a) {
 	a->beVomitedOnIfAppropriate();
 }
 
@@ -249,8 +248,7 @@ void Human::beVomitedOnIfAppropriate(){
 	m_nInfections++;
 }
 
-bool Human::triggersZombieVomit() const
-{
+bool Human::triggersZombieVomit() const {
 	return true;
 }
 
@@ -304,6 +302,7 @@ void Penelope::doSomething()
 			deployLandmine(getDirection(), getX(), getY());
 			break;
 		case KEY_PRESS_ENTER:
+			vaccinate();
 			break;
 		case KEY_PRESS_LEFT:
 			moveAgent(left, getX() - 4, getY());
@@ -368,7 +367,9 @@ void Penelope::vaccinate()
 }
 
 void Penelope::useExitIfAppropriate(){
-	cerr << "exited" << endl;
+	if (getWorld()->citizensLeft())
+		return;
+	//inform world level finished
 }
 
 void Penelope::dieByFallOrBurnIfAppropriate(){
@@ -514,19 +515,77 @@ void Citizen::doSomething(){
 		return;
 	}
 
-	if (getWorld()->locateNearestCitizenThreat(getX(), getY(), ox, oy, d)) {
-		if (d <= 80 * 80)
-			; //MORE TO DO HERE
+	bool Bup, Bdown, Bright, Bleft; double upD, downD, rightD, leftD;
+	if (getWorld()->locateNearestCitizenThreat(cx, cy, ox, oy, d)) {
+		if (d <= 80 * 80) {
+			Bup = getWorld()->canMove(cx, cy + 2, this);
+			Bdown = getWorld()->canMove(cx, cy - 2, this);
+			Bright = getWorld()->canMove(cx + 2, cy - 2, this);
+			Bleft = getWorld()->canMove(cx - 2, cy, this);
+			upD = findZDist(cx, cy + 2, Bup);
+			downD = findZDist(cx, cy - 2, Bdown);
+			rightD = findZDist(cx + 2, cy, Bright);
+			leftD = findZDist(cx - 2, cy, Bleft);
+			if (upD < d && downD < d && rightD < d && leftD < d) {
+				m_paralyzed = true;
+				return;
+			}
+			setDirection(findBestPath(upD, downD, rightD, leftD, cx, cy));
+			moveTo(cx, cy);
+		}
 	}
-
 	m_paralyzed = true;
 }
 
-void Citizen::useExitIfAppropriate(){}
+double Citizen::findZDist(double x, double y, bool b) const
+{
+	if (!b)
+		return 0;
+	double ox, oy, d;
+	getWorld()->locateNearestCitizenThreat(x, y, ox, oy, d);
+	return d;
+}
+
+Direction Citizen::findBestPath(double upd, double downd, double rightd, double leftd, double& cx, double& cy)
+{
+	double most = upd;
+	if (downd > most)
+		most = downd;
+	if (rightd > most)
+		most = rightd;
+	if (leftd > most)
+		most = leftd;
+	
+	if (most == upd) {
+		cy += 2;
+		return up;
+	}
+	else if (most == downd) {
+		cy -= 2;
+		return down;
+	}
+	else if (most == rightd) {
+		cx += 2;
+		return right;
+	}
+	else {
+		cx -= 2;
+		return left;
+	}
+}
+
+void Citizen::useExitIfAppropriate(){
+	getWorld()->increaseScore(500);
+	setDead();
+	getWorld()->playSound(SOUND_CITIZEN_SAVED);
+	getWorld()->recordCitizenGone();
+}
 
 void Citizen::dieByFallOrBurnIfAppropriate(){
+	getWorld()->increaseScore(-1000);
 	setDead();
 	getWorld()->playSound(SOUND_CITIZEN_DIE);
+	getWorld()->recordCitizenGone();
 }
 
 Zombie::Zombie(StudentWorld * sw, double x, double y)
