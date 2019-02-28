@@ -26,6 +26,7 @@ public:
 	virtual bool triggersZombieVomit() const;
 	virtual bool threatensCitizens() const;
 	virtual bool triggersCitizens() const;
+	virtual ~Actor();
 private:
 	StudentWorld* m_world;
 	bool m_alive = true;
@@ -86,6 +87,7 @@ public:
 	virtual void activateIfAppropriate(Actor* a);
 	virtual void dieByFallOrBurnIfAppropriate();
 	virtual void pickUp(Penelope* p) = 0; // Have p pick up this goodie.
+	virtual ~Goodie();
 };
 
 class VaccineGoodie : public Goodie{
@@ -115,6 +117,7 @@ public:
 	virtual void moveAgent(Direction d, double x, double y) = 0;
 	virtual bool blocksMovement() const;
 	virtual bool triggersOnlyActiveLandmines() const;
+	virtual ~Agent();
 };
 
 
@@ -123,6 +126,8 @@ public:
 	Zombie(StudentWorld* sw, double x, double y);
 	virtual void moveAgent(Direction d, double x, double y);
 	virtual bool triggersCitizens() const;
+	virtual bool threatensCitizens() const;
+	virtual ~Zombie();
 };
 
 class DumbZombie : public Zombie{

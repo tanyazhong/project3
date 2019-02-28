@@ -45,6 +45,8 @@ bool Actor::triggersCitizens() const {
 	return false;
 }
 
+Actor::~Actor(){}
+
 void Actor::activateIfAppropriate(Actor * a){}
 void Actor::useExitIfAppropriate(){}
 void Actor::dieByFallOrBurnIfAppropriate(){}
@@ -170,6 +172,8 @@ void Goodie::dieByFallOrBurnIfAppropriate(){
 	setDead();
 }
 
+Goodie::~Goodie(){}
+
 VaccineGoodie::VaccineGoodie(StudentWorld * sw, double x, double y)
 	:Goodie(sw, IID_VACCINE_GOODIE, SPRITE_WIDTH * x, SPRITE_WIDTH * y)
 {}
@@ -233,6 +237,8 @@ bool Agent::blocksMovement() const{
 bool Agent::triggersOnlyActiveLandmines() const{
 	return false;
 }
+
+Agent::~Agent(){}
 
 Human::Human(StudentWorld* sw, int imageID, double x, double y)
 	: Agent(sw, imageID,  x, y, right)
@@ -305,7 +311,7 @@ void Penelope::doSomething()
 
 void Penelope::moveAgent(Direction d, double x, double y) {
 	setDirection(d);
-	if (getWorld()->canMove(x, y))
+	if (getWorld()->canMove(x, y, this))
 		moveTo(x, y);
 }
 
@@ -335,8 +341,7 @@ void Penelope::deployFlames(Direction d, double x, double y) {
 		}
 		if (getWorld()->isFlameBlockedAt(fx, fy))
 			break;
-
-		Actor* f = new Flame(getWorld(), fx, fy, up);
+		Actor* f = new Flame(getWorld(), fx/SPRITE_WIDTH, fy/SPRITE_HEIGHT, up);
 		getWorld()->addActor(f);
 	}
 }
@@ -344,7 +349,7 @@ void Penelope::deployFlames(Direction d, double x, double y) {
 void Penelope::deployLandmine(Direction d, double x, double y)
 {
 	if (m_nLandmines > 0) {
-		Actor* l = new Landmine(getWorld(), x, y);
+		Actor* l = new Landmine(getWorld(), x/SPRITE_HEIGHT, y/SPRITE_WIDTH);
 		getWorld()->addActor(l);
 		m_nLandmines--;
 	}
@@ -420,9 +425,9 @@ void Citizen::doSomething(){
 		int n = randInt(0, 9);
 		Actor* z;
 		if (n < 3)     //0 1 or 2
-			z = new SmartZombie(getWorld(), getX(), getY());
+			z = new SmartZombie(getWorld(), getX() / SPRITE_WIDTH, getY() / SPRITE_HEIGHT);
 		else
-			z = new DumbZombie(getWorld(), getX(), getY());
+			z = new DumbZombie(getWorld(), getX() / SPRITE_WIDTH, getY() / SPRITE_HEIGHT);
 		getWorld()->addActor(z);
 		return;
 	}
@@ -433,48 +438,87 @@ void Citizen::doSomething(){
 	
 	bool isThreat;
 	double ox, oy, d, dx, dy;
-	if (!getWorld()->locateNearestCitizenTrigger(getX(), getY(), ox, oy, d, isThreat)) {
+	if (!getWorld()->locateNearestCitizenTrigger(getX(), getY(), ox, oy, d, isThreat)) {      //no triggers
 		m_paralyzed = true;
 		return;
 	}
-	dx = getX() - ox;
-	dy = getY() - oy;
-	Direction xdir, ydir;
-	if (dx <= 0)
-		ydir = up;
-	else
-		ydir = down;
 
-	if (dy <= 0)
-		xdir = right;
+	dx = ox - getX(); dy = oy - getY();
+	Direction xtoP, ytoP;
+	if (dy > 0)
+		ytoP = up;
 	else
-		xdir = left;
+		ytoP = down;
+	if (dx > 0)
+		xtoP = right;
+	else
+		xtoP = left;
 
-	if (!isThreat && dx * dx + dy * dy <= 80 * 80) {               //penelope is near
+	if (!isThreat && d <= 80 * 80) {               //penelope is near
 		if (getX() == ox) {     //same column
-			if (ydir == up)        //pen is above
+			if (ytoP == up)        //pen is above
 				moveAgent(up, getX(), getY() + 2);
 			else 
 				moveAgent(down, getX(), getY() - 2);
-			return;
 		}
 		else if (getY() == oy){
-			if (xdir == right)        //pen is right
+			if (xtoP == right)        //pen is right
 				moveAgent(right, getX() + 2, getY());
-			else 
+			else
 				moveAgent(left, getX() - 2, getY());
-			return;
 		}
 		else {
-			int n = randInt(0, 1);
-		
-
+			int n = randInt(0, 1);                           //THIS IS IF ELSE HELL
+			if (n == 0) {      //move vertically
+				if (ytoP == up) {     
+					if (getWorld()->canMove(getX(), getY() + 2, this))           //if can move there, move
+						moveAgent(up, getX(), getY() + 2);
+					else if (xtoP == right)                                //if you cant, move horizontally
+						moveAgent(right, getX() + 2, getY());
+					else
+						moveAgent(left, getX() - 2, getY());
+				}
+				else {  
+					if (getWorld()->canMove(getX(), getY() - 2, this))
+						moveAgent(down, getX(), getY() - 2);
+					else if (xtoP == right)
+						moveAgent(right, getX() + 2, getY());
+					else
+						moveAgent(left, getX() - 2, getY());
+				}
+			}
+			else {        //move horizontally
+				if (xtoP == right) {
+					if (getWorld()->canMove(getX() + 2, getY(), this))
+						moveAgent(right, getX() + 2, getY());
+					else if (ytoP == up)       
+						moveAgent(up, getX(), getY() + 2);
+					else
+						moveAgent(down, getX(), getY() - 2);
+				}
+				else {
+					if (getWorld()->canMove(getX() - 2, getY(), this))
+						moveAgent(left, getX() - 2, getY());
+					else if (ytoP == up)
+						moveAgent(up, getX(), getY() + 2);
+					else
+						moveAgent(down, getX(), getY() - 2);
+				}
+			}			
 		}
 	}
+
+	if (getWorld()->locateNearestCitizenThreat(getX(), getY(), ox, oy, d)) {
+		if(d <= 80 * 80)
+	}
+
+
+
+	m_paralyzed = true;
 }
 
 void Citizen::moveAgent(Direction d, double x, double y) {
-	if (getWorld()->canMove(x, y)) {
+	if (getWorld()->canMove(x, y, this)) {
 		setDirection(d);
 		moveTo(x, y);
 	}
@@ -499,6 +543,13 @@ bool Zombie::triggersCitizens() const {
 	return true;
 }
 
+bool Zombie::threatensCitizens() const
+{
+	return true;
+}
+
+Zombie::~Zombie() {}
+
 
 DumbZombie::DumbZombie(StudentWorld * sw, double x, double y)
 	:Zombie(sw, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
@@ -515,14 +566,14 @@ void DumbZombie::dieByFallOrBurnIfAppropriate()
 	int n;
 	n = randInt(0, 9);  
 	if (n == 0) {
-		Actor* v = new VaccineGoodie(getWorld(), getX(), getY());
+		Actor* v = new VaccineGoodie(getWorld(), getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT);
 		getWorld()->addActor(v);
 	}
 
 }
 
 SmartZombie::SmartZombie(StudentWorld * sw, double x, double y)
-	: Zombie(sw, SPRITE_WIDTH*x, SPRITE_HEIGHT* y)
+	: Zombie(sw, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
 {}
 
 void SmartZombie::doSomething()

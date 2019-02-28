@@ -24,7 +24,7 @@ int StudentWorld::init()
 {	
 	Level curLev(assetPath());
 	
-	Level::LoadResult result = curLev.loadLevel("level03.txt");
+	Level::LoadResult result = curLev.loadLevel("level01.txt");
 	if (result == Level::load_fail_file_not_found)
 		cerr << "Cannot find data file" << endl;
 	else if (result == Level::load_fail_bad_format)
@@ -129,7 +129,6 @@ void StudentWorld::cleanUp()
 void StudentWorld::addActor(Actor * a)
 {
 	m_actors.push_back(a);
-	a->moveTo(a->getX()/SPRITE_WIDTH, a->getY()/SPRITE_HEIGHT);
 }
 
 
@@ -159,18 +158,19 @@ void StudentWorld::activateOnAppropriateActors(Actor* a)
 }
 
 
-bool StudentWorld::canMove(double penDestX, double penDestY) const      
+bool StudentWorld::canMove(double DestX, double DestY, Actor* a) const      
 {
 	double b_upperX, b_lowerX, b_upperY, b_lowerY;
-
-	double p_lowerX = penDestX;
+	double p_lowerX = DestX;
 	double p_upperX = p_lowerX + SPRITE_WIDTH - 1;
-	double p_lowerY = penDestY;
+	double p_lowerY = DestY;
 	double p_upperY = p_lowerY + SPRITE_HEIGHT - 1;
 
 	vector<Actor*>::const_iterator it;
 	for (it = m_actors.begin(); it != m_actors.end(); it++)
 	{
+		if (*it == a)
+			continue;
 		if ((*it)->blocksMovement())
 		{
 			b_lowerX = (*it)->getX();
@@ -178,12 +178,12 @@ bool StudentWorld::canMove(double penDestX, double penDestY) const
 			b_upperX = b_lowerX + SPRITE_WIDTH - 1;
 			b_upperY = b_lowerY + SPRITE_HEIGHT - 1;
 
-			if (p_lowerX >= b_lowerX && p_lowerX <= b_upperX && 
+			if (p_lowerX >= b_lowerX && p_lowerX <= b_upperX &&
 				p_lowerY >= b_lowerY && p_lowerY <= b_upperY)
 				return false;
 			if (p_upperX >= b_lowerX && p_upperX <= b_upperX &&
 				p_upperY >= b_lowerY && p_upperY <= b_upperY)
-				return false; 
+				return false;
 			if (p_lowerX >= b_lowerX && p_lowerX <= b_upperX &&
 				p_upperY >= b_lowerY && p_upperY <= b_upperY)
 				return false;
@@ -191,6 +191,26 @@ bool StudentWorld::canMove(double penDestX, double penDestY) const
 				p_lowerY >= b_lowerY && p_lowerY <= b_upperY)
 				return false;
 		}
+	}
+
+	if (m_pen != a && m_pen->isAlive()) {
+		b_lowerX = m_pen->getX();
+		b_lowerY = m_pen->getY();
+		b_upperX = b_lowerX + SPRITE_WIDTH - 1;
+		b_upperY = b_lowerY + SPRITE_HEIGHT - 1;
+
+		if (p_lowerX >= b_lowerX && p_lowerX <= b_upperX &&
+			p_lowerY >= b_lowerY && p_lowerY <= b_upperY)
+			return false;
+		if (p_upperX >= b_lowerX && p_upperX <= b_upperX &&
+			p_upperY >= b_lowerY && p_upperY <= b_upperY)
+			return false;
+		if (p_lowerX >= b_lowerX && p_lowerX <= b_upperX &&
+			p_upperY >= b_lowerY && p_upperY <= b_upperY)
+			return false;
+		if (p_upperX >= b_lowerX && p_upperX <= b_upperX &&
+			p_lowerY >= b_lowerY && p_lowerY <= b_upperY)
+			return false;
 	}
 	return true;
 }
@@ -215,51 +235,43 @@ bool StudentWorld::isFlameBlockedAt(double x, double y) const
 
 bool StudentWorld::locateNearestCitizenTrigger(double x, double y, double & otherX, double & otherY, double & distance, bool & isThreat) const
 {
-	// Return true if there is a living zombie or Penelope, otherwise false.
-// If true, otherX, otherY, and distance will be set to the location and
-// distance of the one nearest to (x,y), and isThreat will be set to true
-// if it's a zombie, false if a Penelope.
-	double px, py = 0;
+	double px = 0; double py = 0;
 	if (!m_pen->isAlive())
 		return false;
 	else {
-		px = m_pen->getX();
-		py = m_pen->getY();
+		px = m_pen->getX(); py = m_pen->getY();
 	}
+	
+	double pdx = x - px; double pdy = y - py;
+	double pdist = (pdx * pdx + pdy * pdy);
+	if (locateNearestCitizenThreat(x, y, otherX, otherY, distance)) {  // a zombie exists
+		if (distance <= pdist) {
+			isThreat = true;
+			return true;
+		}
+	}
+	otherX = px; otherY = py;
+	distance = pdist;
+	isThreat = false;
+	return true;
+}
 
+bool StudentWorld::locateNearestCitizenThreat(double x, double y, double & otherX, double & otherY, double & distance) const
+{
+	bool z = false;
+	double dx = 256; double dy = 256;
 	vector<Actor*>::const_iterator it;
-	double dx = 0;
-	double dy = 0;     //distances
-	double curdX, curdY;
-	bool noZomb = true;
-	for (it = m_actors.begin(); it != m_actors.end(); it++)
-	{
-		if ((*it)->triggersCitizens()) {
-			noZomb = false;
-			curdX = x - (*it)->getX();
-			curdY = y - (*it)->getY();
-			if (curdX * curdX + curdY * curdY <= dx * dx + dy * dy) {     //this is the currecnt closest zomb
-				dx = curdX;
-				dy = curdY;
-				otherX = (*it)->getX();
-				otherY = (*it)->getY();
+	for (it = m_actors.begin(); it != m_actors.end(); it++) {
+		if ((*it)->threatensCitizens()) {     //actor is a zombie
+			double zx = (*it)->getX(); double zy = (*it)->getY();
+			double zdx = x - zx; double zdy = y - zy;
+			if (zdx * zdx + zdy * zdy < dx * dx + dy * dy) {   //zombie is current closest
+				dx = zdx; dy = zdy; //set the distance
+				otherX = zx; otherY = zy; //set the locations
+				distance = dx * dx + dy * dy;
+				z = true;
 			}
 		}
 	}
-
-	if (noZomb || px * px + py * py < dx*dx + dy * dy) {   //pen is closer than zomb
-		distance = px * px + py * py;
-		otherX = px;
-		otherY = py;
-		isThreat = false;
-		return true;
-	}
-	else{
-		distance = dx * dx + dy * dy;
-		otherX = dx;
-		otherY = dy;
-		isThreat = true;
-		return true;
-	}
-	return false;
+	return z;
 }
