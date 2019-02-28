@@ -46,7 +46,7 @@ StudentWorld* Actor::getWorld() const{
 
 
 Wall::Wall(StudentWorld* sw, double x, double y)
-	: Actor(sw, IID_WALL, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0)
+	: Actor(sw, IID_WALL, x, y, right, 0)
 {}
 void Wall::doSomething(){}
 bool Wall::blocksMovement() const {
@@ -58,7 +58,7 @@ bool Wall::blocksFlame() const{
 
 
 Exit::Exit(StudentWorld * sw, double x, double y)
-	: Actor(sw, IID_EXIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 1)
+	: Actor(sw, IID_EXIT,  x, y, right, 1)
 {}
 void Exit::doSomething(){
 	getWorld()->activateOnAppropriateActors(this);   
@@ -72,7 +72,7 @@ bool Exit::blocksFlame() const{
 
 
 Pit::Pit(StudentWorld * sw, double x, double y)
-	: Actor(sw, IID_PIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 0)
+	: Actor(sw, IID_PIT, x, y, right, 0)
 {}
 void Pit::doSomething(){
 	getWorld()->activateOnAppropriateActors(this);
@@ -83,7 +83,7 @@ void Pit::activateIfAppropriate(Actor * a){
 
 
 Flame::Flame(StudentWorld * sw, double x, double y, int dir)
-	:Actor(sw, IID_FLAME, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, dir, 0)
+	:Actor(sw, IID_FLAME, x, y, dir, 0)
 {}
 
 void Flame::doSomething(){
@@ -102,7 +102,7 @@ void Flame::activateIfAppropriate(Actor * a){
 
 
 Vomit::Vomit(StudentWorld * sw, double x, double y, int dir)
-	:Actor(sw, IID_VOMIT, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, dir, 0)
+	:Actor(sw, IID_VOMIT,x,  y, dir, 0)
 {}
 
 void Vomit::doSomething()
@@ -123,7 +123,7 @@ void Vomit::activateIfAppropriate(Actor * a) {
 
 
 Landmine::Landmine(StudentWorld * sw, double x, double y)
-	:Actor(sw, IID_LANDMINE, SPRITE_WIDTH * x, SPRITE_HEIGHT * y, right, 1)
+	:Actor(sw, IID_LANDMINE,  x,y, right, 1)
 {}
 
 void Landmine::doSomething()
@@ -154,33 +154,33 @@ void Landmine::dieByFallOrBurnIfAppropriate()
 
 void Landmine::explode(double x, double y)
 {
-	double fx = x / SPRITE_WIDTH;
-	double fy = y / SPRITE_HEIGHT;
+	double fx = x;
+	double fy = y;
 	StudentWorld* sw = getWorld();
 	//middle flame
 	Actor* f = new Flame(sw, fx, fy, up);   
 	sw->addActor(f);
 
 	//top row
-	f = new Flame(sw, fx - 1, fy + 1, up);
+	f = new Flame(sw, fx - SPRITE_WIDTH, fy + SPRITE_HEIGHT, up);
 	sw->addActor(f);
-	f = new Flame(sw, fx, fy + 1, up);
+	f = new Flame(sw, fx, fy + SPRITE_HEIGHT, up);
 	sw->addActor(f);
-	f = new Flame(sw, fx + 1, fy + 1, up);
+	f = new Flame(sw, fx + SPRITE_WIDTH, fy + SPRITE_HEIGHT, up);
 	sw->addActor(f);
 
 	//middle row
-	f = new Flame(sw, fx - 1, fy, up);
+	f = new Flame(sw, fx - SPRITE_WIDTH, fy, up);
 	sw->addActor(f);
-	f = new Flame(sw, fx + 1, fy, up);
+	f = new Flame(sw, fx + SPRITE_WIDTH, fy, up);
 	sw->addActor(f);
 
 	//bottom row
-	f = new Flame(sw, fx - 1, fy - 1, up);
+	f = new Flame(sw, fx - SPRITE_WIDTH, fy - SPRITE_HEIGHT, up);
 	sw->addActor(f);
-	f = new Flame(sw, fx, fy - 1, up);
+	f = new Flame(sw, fx, fy - SPRITE_HEIGHT, up);
 	sw->addActor(f);
-	f = new Flame(sw, fx + 1, fy - 1, up);
+	f = new Flame(sw, fx + SPRITE_WIDTH, fy - SPRITE_HEIGHT, up);
 	sw->addActor(f);
 
 	f = new Pit(sw, fx, fy);
@@ -205,7 +205,7 @@ Goodie::~Goodie(){}
 
 
 VaccineGoodie::VaccineGoodie(StudentWorld * sw, double x, double y)
-	:Goodie(sw, IID_VACCINE_GOODIE, SPRITE_WIDTH * x, SPRITE_WIDTH * y)
+	:Goodie(sw, IID_VACCINE_GOODIE, x,y)
 {}
 
 void VaccineGoodie::doSomething()
@@ -222,7 +222,7 @@ void VaccineGoodie::pickUp(Penelope * p)
 }
 
 GasCanGoodie::GasCanGoodie(StudentWorld * sw, double x, double y)
-	:Goodie(sw, IID_GAS_CAN_GOODIE, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+	:Goodie(sw, IID_GAS_CAN_GOODIE, x,  y)
 {}
 
 void GasCanGoodie::doSomething()
@@ -239,7 +239,7 @@ void GasCanGoodie::pickUp(Penelope * p)
 }
 
 LandmineGoodie::LandmineGoodie(StudentWorld * sw, double x, double y)
-	:Goodie(sw, IID_LANDMINE_GOODIE, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+	:Goodie(sw, IID_LANDMINE_GOODIE,  x, y)
 {}
 
 void LandmineGoodie::doSomething()
@@ -296,7 +296,7 @@ void Agent::moveAgent(Direction d, double x, double y) {
 }
 
 Penelope::Penelope(StudentWorld* sw, double x, double y) 
-	: Human(sw, IID_PLAYER, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+	: Human(sw, IID_PLAYER, x, y)
 {}
 
 void Penelope::doSomething() 
@@ -364,7 +364,7 @@ void Penelope::deployFlames(Direction d, double x, double y) {
 		}
 		if (getWorld()->isFlameBlockedAt(fx, fy))
 			break;
-		Actor* f = new Flame(getWorld(), fx/SPRITE_WIDTH, fy/SPRITE_HEIGHT, up);
+		Actor* f = new Flame(getWorld(), fx, fy, up);
 		getWorld()->addActor(f);
 	}
 }
@@ -372,7 +372,7 @@ void Penelope::deployFlames(Direction d, double x, double y) {
 void Penelope::deployLandmine(Direction d, double x, double y)
 {
 	if (m_nLandmines > 0) {
-		Actor* l = new Landmine(getWorld(), x/SPRITE_HEIGHT, y/SPRITE_WIDTH);
+		Actor* l = new Landmine(getWorld(), x, y);
 		getWorld()->addActor(l);
 		m_nLandmines--;
 	}
@@ -407,33 +407,27 @@ void Penelope::pickUpGoodieIfAppropriate(Goodie * g)
 bool Penelope::triggersCitizens() const {
 	return true;
 }
-
 void Penelope::increaseVaccines(){
 	m_nVaccines++;
 }
-
 void Penelope::increaseFlameCharges(){
 	m_nFlamethrowers += 5;
 }
-
 void Penelope::increaseLandmines(){
 	m_nLandmines += 2;
 }
-
 int Penelope::getNumVaccines() const{
 	return m_nVaccines;
 }
-
 int Penelope::getNumFlameCharges() const{
 	return m_nFlamethrowers;
 }
-
 int Penelope::getNumLandmines() const{
 	return m_nLandmines;
 }
 
 Citizen::Citizen(StudentWorld * sw, double x, double y)
-	:Human(sw,IID_CITIZEN, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+	:Human(sw,IID_CITIZEN,  x, y)
 {}
 
 void Citizen::doSomething(){
@@ -450,9 +444,9 @@ void Citizen::doSomething(){
 		int n = randInt(0, 9);
 		Actor* z;
 		if (n < 3)     //0 1 or 2
-			z = new SmartZombie(getWorld(), cx / SPRITE_WIDTH, cy / SPRITE_HEIGHT);
+			z = new SmartZombie(getWorld(), cx , cy );
 		else
-			z = new DumbZombie(getWorld(), cx / SPRITE_WIDTH, cy / SPRITE_HEIGHT);
+			z = new DumbZombie(getWorld(), cx , cy);
 		getWorld()->addActor(z);
 		return;
 	}
@@ -650,7 +644,7 @@ bool Zombie::shouldIVomit(double vx, double vy, Direction zd) const
 	if (getWorld()->isZombieVomitTriggerAt(vx, vy)) {
 		int n = randInt(0, 2);
 		if (n == 0) {
-			Actor* v = new Vomit(getWorld(), vx / SPRITE_WIDTH, vy / SPRITE_HEIGHT, getDirection());
+			Actor* v = new Vomit(getWorld(), vx , vy , getDirection());
 			getWorld()->addActor(v);
 			getWorld()->playSound(SOUND_ZOMBIE_VOMIT);
 			return true;
@@ -661,7 +655,7 @@ bool Zombie::shouldIVomit(double vx, double vy, Direction zd) const
 
 
 DumbZombie::DumbZombie(StudentWorld * sw, double x, double y)
-	:Zombie(sw, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+	:Zombie(sw, x,  y)
 {}
 
 void DumbZombie::doSomething()
@@ -719,13 +713,13 @@ void DumbZombie::dieByFallOrBurnIfAppropriate()
 	int n;
 	n = randInt(0, 9);  
 	if (n == 0) {
-		Actor* v = new VaccineGoodie(getWorld(), getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT);
+		Actor* v = new VaccineGoodie(getWorld(), getX(), getY());
 		getWorld()->addActor(v);
 	}
 }
 
 SmartZombie::SmartZombie(StudentWorld * sw, double x, double y)
-	: Zombie(sw, SPRITE_WIDTH * x, SPRITE_HEIGHT * y)
+	: Zombie(sw, x, y)
 {}
 
 void SmartZombie::doSomething()

@@ -26,6 +26,8 @@ StudentWorld::StudentWorld(string assetPath)       //constructor
 int StudentWorld::init()
 {	
 	int level =  getLevel();
+	if (level == 99)
+		return GWSTATUS_PLAYER_WON;
 	ostringstream levtxt;
 	levtxt.fill('0');
 	levtxt << "level";
@@ -34,11 +36,9 @@ int StudentWorld::init()
 	Level curLev(assetPath());
 	Level::LoadResult result = curLev.loadLevel(leveltext);
 	if (result == Level::load_fail_file_not_found)
-		cerr << "Cannot find data file " << leveltext << endl;
+		return GWSTATUS_PLAYER_WON;
 	else if (result == Level::load_fail_bad_format)
-		cerr << "Your level was improperly formatted" << endl;
-	else if (result == Level::load_success)
-		cerr << "Successfully loaded level" << endl;
+		return GWSTATUS_LEVEL_ERROR;
 
 	Level::MazeEntry curSpot;
 	for (int i = 0; i < LEVEL_WIDTH; i++) 
@@ -50,43 +50,43 @@ int StudentWorld::init()
 			switch (curSpot)
 			{
 				case Level::player:
-					m_pen = new Penelope(this, i, j);
+					m_pen = new Penelope(this, i * SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					break;
 				case Level::wall: 
-					a = new Wall(this, i, j);
+					a = new Wall(this, i* SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					m_actors.push_back(a);
 					break; 
 				case Level::exit:
-					a = new Exit(this, i, j);
+					a = new Exit(this, i* SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					m_actors.push_back(a);
 					break;
 				case Level::pit:
-					a = new Pit(this, i, j);
+					a = new Pit(this, i* SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					m_actors.push_back(a);
 					break;
 				case Level::citizen:
-					a = new Citizen(this, i, j);
+					a = new Citizen(this, i* SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					m_actors.push_back(a);
 					m_nCitizens++;
 					break;
 				case Level::dumb_zombie:
-					a = new DumbZombie(this, i, j);
+					a = new DumbZombie(this, i* SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					m_actors.push_back(a);
 					break;
 				case Level::smart_zombie:
-					a = new SmartZombie(this, i, j);
+					a = new SmartZombie(this, i* SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					m_actors.push_back(a);
 					break;
 				case Level::gas_can_goodie:
-					a = new GasCanGoodie(this, i, j);
+					a = new GasCanGoodie(this, i* SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					m_actors.push_back(a);
 					break;
 				case Level::landmine_goodie:
-					a = new LandmineGoodie(this, i, j);
+					a = new LandmineGoodie(this, i* SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					m_actors.push_back(a);
 					break;
 				case Level::vaccine_goodie:
-					a = new VaccineGoodie(this, i, j);
+					a = new VaccineGoodie(this, i* SPRITE_WIDTH, j* SPRITE_HEIGHT);
 					m_actors.push_back(a);
 					break;
 			}
@@ -99,10 +99,12 @@ int StudentWorld::init()
 
 int StudentWorld::move()
 {
-	if (m_pen->isAlive()) 
+	if (m_pen->isAlive())
 		m_pen->doSomething();
-	else
+	else {
+		decLives();
 		return GWSTATUS_PLAYER_DIED;
+	}
 
 	if (m_levFinished)
 		return GWSTATUS_FINISHED_LEVEL;
@@ -150,7 +152,10 @@ int StudentWorld::move()
 
 void StudentWorld::cleanUp()
 {
-	delete m_pen;
+	if (m_pen != nullptr) {
+		delete m_pen;
+		m_pen = nullptr;
+	}
 	Actor* temp;
 	vector<Actor*>::iterator it = m_actors.begin(); 
 	while (it != m_actors.end()) {
