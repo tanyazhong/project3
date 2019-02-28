@@ -188,7 +188,7 @@ public:
 	
 private:
 	void deployFlames(Direction d, double x, double y);
-	void deployLandmine(Direction d, double x, double y);
+	void deployLandmine(double x, double y);
 	void vaccinate();
 	int m_nLandmines = 0;
 	int m_nFlamethrowers = 0;

@@ -40,6 +40,7 @@ int StudentWorld::init()
 	else if (result == Level::load_fail_bad_format)
 		return GWSTATUS_LEVEL_ERROR;
 
+	m_nCitizens = 0;           //set number of citizens to zero at the start of initialization
 	Level::MazeEntry curSpot;
 	for (int i = 0; i < LEVEL_WIDTH; i++) 
 	{
@@ -201,6 +202,7 @@ void StudentWorld::recordCitizenGone()
 
 void StudentWorld::recordLevelFinishedIfAllCitizensGone()
 {
+
 	m_levFinished = true;
 }
 

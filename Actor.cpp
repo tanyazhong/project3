@@ -319,7 +319,7 @@ void Penelope::doSomething()
 			deployFlames(getDirection(), getX(), getY());
 			break;
 		case KEY_PRESS_TAB:
-			deployLandmine(getDirection(), getX(), getY());
+			deployLandmine(getX(), getY());
 			break;
 		case KEY_PRESS_ENTER:
 			vaccinate();
@@ -369,7 +369,7 @@ void Penelope::deployFlames(Direction d, double x, double y) {
 	}
 }
 
-void Penelope::deployLandmine(Direction d, double x, double y)
+void Penelope::deployLandmine(double x, double y)
 {
 	if (m_nLandmines > 0) {
 		Actor* l = new Landmine(getWorld(), x, y);
@@ -597,6 +597,8 @@ void Citizen::useExitIfAppropriate(){
 }
 
 void Citizen::dieByFallOrBurnIfAppropriate(){
+	if (!isAlive())
+		return;
 	getWorld()->increaseScore(-1000);
 	setDead();
 	getWorld()->playSound(SOUND_CITIZEN_DIE);
