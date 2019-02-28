@@ -20,6 +20,8 @@ public:
     virtual void cleanUp();
 	void addActor(Actor* a);
 	void activateOnAppropriateActors(Actor* a);
+	void recordCitizenGone();
+	bool citizensLeft() const;
 	bool canMove(double x, double y, Actor* a) const;
 	bool isFlameBlockedAt(double x, double y) const;
 	bool locateNearestCitizenTrigger(double x, double y, double& otherX, double& otherY, double& distance, bool& isThreat) const;
@@ -31,6 +33,7 @@ public:
 private:
 	std::vector<Actor*> m_actors;
 	Penelope* m_pen;
+	int m_nCitizens;
 };
 
 
