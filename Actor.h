@@ -79,19 +79,24 @@ public:
 	virtual void doSomething();
 	virtual void activateIfAppropriate(Actor* a);
 	virtual void dieByFallOrBurnIfAppropriate();
-	bool active() const;
 private:
 	void explode(double x, double y);
+	bool active() const;
 	int m_nSafeTicks = 30;
 };
 
 class Goodie : public Actor{
 public:
-	Goodie(StudentWorld* sw, int imageID, double x, double y);
+	Goodie(StudentWorld* sw, int imageID, double x, double y, int gp);
 	virtual void activateIfAppropriate(Actor* a);
 	virtual void dieByFallOrBurnIfAppropriate();
 	virtual void pickUp(Penelope* p) = 0; // Have p pick up this goodie.
 	virtual ~Goodie();
+protected: 
+	void decGraceP();
+	int getGraceP();
+private:
+	int m_graceP;
 };
 
 class VaccineGoodie : public Goodie{
@@ -129,10 +134,11 @@ public:
 	Zombie(StudentWorld* sw, double x, double y);
 	virtual bool triggersCitizens() const;
 	virtual bool threatensCitizens() const;
+	virtual ~Zombie();
+protected:
 	int getPlan() const;
 	void setPlan(int p);
 	void decPlan();
-	virtual ~Zombie();
 	bool shouldIVomit(double vx, double vy, Direction zd) const;
 private:
 	int m_planDist = 0;

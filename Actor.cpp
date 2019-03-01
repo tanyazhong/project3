@@ -121,7 +121,6 @@ void Vomit::activateIfAppropriate(Actor * a) {
 	a->beVomitedOnIfAppropriate();
 }
 
-
 Landmine::Landmine(StudentWorld * sw, double x, double y)
 	:Actor(sw, IID_LANDMINE,  x,y, right, 1)
 {}
@@ -192,26 +191,39 @@ bool Landmine::active() const {
 }
 
 
-Goodie::Goodie(StudentWorld * sw, int imageID, double x, double y)
-	:Actor(sw, imageID, x, y, right, 1)
+Goodie::Goodie(StudentWorld * sw, int imageID, double x, double y, int gp)
+	:Actor(sw, imageID, x, y, right, 1), m_graceP(gp)
 {}
 void Goodie::activateIfAppropriate(Actor * a){
 	a->pickUpGoodieIfAppropriate(this);
 }
 void Goodie::dieByFallOrBurnIfAppropriate(){
-	setDead();
+	if (m_graceP == 0) {
+		setDead();
+		cerr << "goodie died" << endl;
+	}
 }
 Goodie::~Goodie(){}
 
+void Goodie::decGraceP(){
+	m_graceP--;
+}
+
+int Goodie::getGraceP(){
+	return m_graceP;
+}
+
 
 VaccineGoodie::VaccineGoodie(StudentWorld * sw, double x, double y)
-	:Goodie(sw, IID_VACCINE_GOODIE, x,y)
+	:Goodie(sw, IID_VACCINE_GOODIE, x, y, 2)
 {}
 
 void VaccineGoodie::doSomething()
 {
 	if (!isAlive())
 		return;
+	if (getGraceP() != 0)
+		decGraceP();
 	getWorld()->activateOnAppropriateActors(this);
 }
 
@@ -222,7 +234,7 @@ void VaccineGoodie::pickUp(Penelope * p)
 }
 
 GasCanGoodie::GasCanGoodie(StudentWorld * sw, double x, double y)
-	:Goodie(sw, IID_GAS_CAN_GOODIE, x,  y)
+	:Goodie(sw, IID_GAS_CAN_GOODIE, x,  y, 0)
 {}
 
 void GasCanGoodie::doSomething()
@@ -239,7 +251,7 @@ void GasCanGoodie::pickUp(Penelope * p)
 }
 
 LandmineGoodie::LandmineGoodie(StudentWorld * sw, double x, double y)
-	:Goodie(sw, IID_LANDMINE_GOODIE,  x, y)
+	:Goodie(sw, IID_LANDMINE_GOODIE,  x, y, 0)
 {}
 
 void LandmineGoodie::doSomething()
@@ -299,11 +311,10 @@ Penelope::Penelope(StudentWorld* sw, double x, double y)
 	: Human(sw, IID_PLAYER, x, y)
 {}
 
-void Penelope::doSomething() 
-{
+void Penelope::doSomething() {
 	if (!isAlive())
 		return;
-	if (isInfected()){
+	if (isInfected()) {
 		increaseInfections();
 		if (infectionDuration() == 500) {
 			setDead();
@@ -314,7 +325,7 @@ void Penelope::doSomething()
 	int ch;
 	if (getWorld()->getKey(ch)) { // user hit a key during this tick!
 		switch (ch)
-		{ 
+		{
 		case KEY_PRESS_SPACE:
 			deployFlames(getDirection(), getX(), getY());
 			break;
@@ -430,33 +441,34 @@ Citizen::Citizen(StudentWorld * sw, double x, double y)
 	:Human(sw,IID_CITIZEN,  x, y)
 {}
 
-void Citizen::doSomething(){
+void Citizen::doSomething() {
 	double cx = getX(); double cy = getY();
 	if (!isAlive())
 		return;
-	if (isInfected())
+	if (isInfected()) {
 		increaseInfections();
-	if (infectionDuration() == 500) {
-		setDead();
-		getWorld()->recordCitizenGone();
-		getWorld()->playSound(SOUND_ZOMBIE_BORN);
-		getWorld()->increaseScore(-1000);
-		int n = randInt(0, 9);
-		Actor* z;
-		if (n < 3)     //0 1 or 2
-			z = new SmartZombie(getWorld(), cx , cy );
-		else
-			z = new DumbZombie(getWorld(), cx , cy);
-		getWorld()->addActor(z);
-		return;
+		if (infectionDuration() == 500) {
+			setDead();
+			getWorld()->recordCitizenGone();
+			getWorld()->playSound(SOUND_ZOMBIE_BORN);
+			getWorld()->increaseScore(-1000);
+			int n = randInt(0, 9);
+			Actor* z;
+			if (n < 3)     //0 1 or 2
+				z = new SmartZombie(getWorld(), cx, cy);
+			else
+				z = new DumbZombie(getWorld(), cx, cy);
+			getWorld()->addActor(z);
+			return;
+		}
 	}
+
 	if (m_paralyzed) {
 		m_paralyzed = false;
 		return;
 	}
 	
-	bool isThreat;
-	double ox, oy, d, dx, dy;
+	bool isThreat; double ox, oy, d, dx, dy;
 	if (!getWorld()->locateNearestCitizenTrigger(cx, cy, ox, oy, d, isThreat)) {      //no triggers
 		m_paralyzed = true;
 		return;
@@ -535,7 +547,7 @@ void Citizen::doSomething(){
 		if (d <= 80 * 80) {
 			Bup = getWorld()->canMove(cx, cy + 2, this);
 			Bdown = getWorld()->canMove(cx, cy - 2, this);
-			Bright = getWorld()->canMove(cx + 2, cy - 2, this);
+			Bright = getWorld()->canMove(cx + 2, cy, this);
 			Bleft = getWorld()->canMove(cx - 2, cy, this);
 			upD = findZDist(cx, cy + 2, Bup);
 			downD = findZDist(cx, cy - 2, Bdown);
